@@ -1,0 +1,23 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# ynab-mcp-server Project Best Practices Rule
+
+**Current globs for this rule:**
+- ynab-mcp-server/**   <!-- Applies only to files in 'ynab-mcp-server' subfolder -->
+
+- **Never use `**/*` as a glob pattern:**
+  - It matches every file in the workspace, including configuration and documentation files, which can cause unintended effects and performance issues.
+- **Scope:**
+  - This rule applies to all files within the ynab-mcp-server project directory and its subfolders.
+- **General Best Practices:**
+  - Follow project-specific coding standards and conventions.
+  - Keep code, documentation, and configuration files organized by type and purpose.
+  - Use language-appropriate linters and formatters.
+  - Write and maintain tests for all business logic.
+  - Do not commit secrets or credentials to the repository.
+  - Document any project-specific setup or usage instructions in a README file.
+
+// Add more ynab-mcp-server-specific best practices as needed.

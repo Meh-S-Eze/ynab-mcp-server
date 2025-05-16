@@ -1,0 +1,39 @@
+---
+description: "Formatting guidelines for writing a proper .mdc rule in Cursor"
+globs: **.mdc
+alwaysApply: false
+---
+# .mdc Rule Formatting Guidelines
+
+- **Root-Relative Globs:**
+  - Never use `**/*` as a glob pattern—it matches every file in the workspace, including config and documentation, which can cause unintended effects.
+  - Use `newprojectfolder/**` (replace with your actual project folder name) for rules that should only apply to files in a specific project or subfolder.
+  - For language-specific rules, use patterns like `newprojectfolder/**/*.py`.
+  - Do not use ambiguous or context-dependent globs.
+- **Agent-Generated Rule Descriptions:**
+  - If a rule is created by an agent, the `description` field must specify which root directory the rule is intended for (e.g., "This rule is for the project root").
+- **Glob Transparency:**
+  - The body of every rule must include a section listing the current `globs:` patterns being used for that rule, for clarity and transparency.
+- **Rule Body (Markdown format, after the frontmatter):**
+  - Start with a `#` heading for the rule title.
+  - Use bullet points or numbered lists for clarity.
+  - Provide clear, concise instructions or conventions.
+  - Reference files or examples using `@filename` if needed.
+  - Keep content focused and actionable.
+  - Include a section like:
+    ```markdown
+    **Current globs for this rule:**
+    - Never use this pattern **/*  
+    - newprojectfolder/**  always use this pattern with  <!-- Applies only to files in 'newprojectfolder' subfolder -->
+    ```
+
+**Example:**
+
+# Example Rule Title
+
+**Current globs for this rule:**
+- newprojectfolder/**   <!-- Applies only to files in 'newprojectfolder' subfolder -->
+
+- **Main Points in Bold**
+  - Sub-points with details
+  - Examples and explanations
