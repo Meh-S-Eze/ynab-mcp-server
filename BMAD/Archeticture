@@ -1,0 +1,1001 @@
+docs/architecture.md
+ynab-mcp-server API Enhancement Architecture Document
+1. Technical Summary
+This document outlines the architecture for the ynab-mcp-server API Enhancement project. The system is a Model Context Protocol (MCP) server built using the TypeScript language and the mcp-framework. Its primary purpose is to provide a comprehensive set of tools for interacting with the You Need A Budget (YNAB) API, specifically focusing on category and transaction management. The architecture emphasizes adding new, discrete tools that correspond to YNAB API v1 endpoints, ensuring full coverage as per the project goals. Configuration is handled via environment variables for the YNAB API token and an optional default budget ID.
+
+2. High-Level Overview
+The ynab-mcp-server acts as an intermediary between an MCP client (e.g., an AI agent or a CLI) and the YNAB API. Users interact with the server by invoking specific "tools" (MCP commands) with required parameters. Each tool is responsible for a specific YNAB API interaction, processing the input, calling the YNAB API via the official ynab-sdk-js, and then formatting the API response back to the MCP client. The architecture is stateless from the perspective of individual tool invocations, relying on the YNAB API as the source of truth.
+
+Code snippet
+
+graph TD
+    MCPClientInterface["MCP Client (e.g., AI Agent, CLI)"] -- MCP Request (tool_name, params) --> YNABMCPServer["YNAB MCP Server (mcp-framework)"];
+    subgraph YNABMCPServer
+        ToolDispatcher["Tool Dispatcher"] -- Loads/Executes Tool --> SpecificToolInstance["Specific Tool Instance (e.g., ListCategoriesTool)"];
+    end
+    SpecificToolInstance -- Uses ynab-sdk-js --> YNABAPI["YNAB API v1"];
+    YNABAPI -- API Response --> SpecificToolInstance;
+    SpecificToolInstance -- Formats Result --> ToolDispatcher;
+    ToolDispatcher -- MCP Response (result/error) --> MCPClientInterface;
+
+    Environment["Environment Variables (YNAB_API_TOKEN, YNAB_BUDGET_ID)"] --> SpecificToolInstance;
+3. Component View
+The system is composed of the following key components:
+
+MCP Server (mcp-framework):
+Responsibility: Manages the Model Context Protocol, listens for incoming tool requests, dispatches requests to the appropriate tool, and sends responses back to the client.
+Implementation: Provided by the mcp-framework library. The src/index.ts initializes and starts this server.
+MCP Tools (e.g., ListCategoriesTool.ts, CreateTransactionTool.ts):
+Responsibility: Each tool encapsulates the logic for a specific YNAB API interaction. This includes defining its name, description, input schema (using Zod), and the execution logic to call the YNAB API and process its response.
+Implementation: TypeScript classes located in src/tools/, extending MCPTool from mcp-framework. Each tool instantiates ynab.API for YNAB communication.
+YNAB SDK (ynab package):
+Responsibility: Provides the necessary functions to authenticate with and make calls to the YNAB REST API. Handles low-level HTTP requests and response parsing.
+Implementation: The official ynab JavaScript/TypeScript library.
+Zod Schemas:
+Responsibility: Define the expected structure, types, and validation rules for the input parameters of each MCP tool.
+Implementation: Defined within each tool class using the zod library.
+Environment Configuration:
+Responsibility: Provides sensitive (API token) and default (budget ID) configuration to the tools.
+Implementation: Standard Node.js process.env variables, typically loaded from a .env file during local development (though not explicitly managed by the server itself).
+<!-- end list -->
+
+Code snippet
+
+graph TD
+    subgraph "ynab-mcp-server Application"
+        ServerCore["MCPServer (src/index.ts)"]
+        ToolsDir["src/tools/"]
+
+        subgraph ToolsDir
+            ToolBase["MCPTool (mcp-framework)"]
+            ListCategoriesTool["ListCategoriesTool.ts"]
+            GetCategoryTool["GetCategoryTool.ts"]
+            UpdateCategoryTool["UpdateCategoryTool.ts"]
+            ListTransactionsTool["ListTransactionsTool.ts"]
+            CreateTransactionTool["CreateTransactionTool.ts"]
+            UpdateTransactionTool["UpdateTransactionTool.ts"]
+            DeleteTransactionTool["DeleteTransactionTool.ts"]
+            BulkTools["CreateBulkTransactionsTool.ts, UpdateBulkTransactionsTool.ts"]
+            OtherTools["... (all other tools)"]
+        end
+
+        ToolBase <|-- ListCategoriesTool
+        ToolBase <|-- GetCategoryTool
+        ToolBase <|-- UpdateCategoryTool
+        ToolBase <|-- ListTransactionsTool
+        ToolBase <|-- CreateTransactionTool
+        ToolBase <|-- UpdateTransactionTool
+        ToolBase <|-- DeleteTransactionTool
+        ToolBase <|-- BulkTools
+        ToolBase <|-- OtherTools
+
+        ServerCore --> ToolsDir
+
+        ListCategoriesTool -- Uses --> YNABSDK["ynab.API (ynab SDK)"]
+        GetCategoryTool -- Uses --> YNABSDK
+        UpdateCategoryTool -- Uses --> YNABSDK
+        ListTransactionsTool -- Uses --> YNABSDK
+        CreateTransactionTool -- Uses --> YNABSDK
+        UpdateTransactionTool -- Uses --> YNABSDK
+        DeleteTransactionTool -- Uses --> YNABSDK
+        BulkTools -- Uses --> YNABSDK
+        OtherTools -- Uses --> YNABSDK
+
+        ListCategoriesTool -- Defines --> ZodSchema1["Zod Input Schema"]
+        GetCategoryTool -- Defines --> ZodSchema2["Zod Input Schema"]
+        UpdateCategoryTool -- Defines --> ZodSchema3["Zod Input Schema"]
+        ListTransactionsTool -- Defines --> ZodSchema4["Zod Input Schema"]
+        CreateTransactionTool -- Defines --> ZodSchema5["Zod Input Schema"]
+        UpdateTransactionTool -- Defines --> ZodSchema6["Zod Input Schema"]
+        DeleteTransactionTool -- Defines --> ZodSchema7["Zod Input Schema"]
+        BulkTools -- Defines --> ZodSchema8["Zod Input Schema"]
+        OtherTools -- Defines --> ZodSchemaN["Zod Input Schema"]
+
+    end
+
+    YNABSDK -- Interacts with --> YNAB_API_Service["YNAB API (External Service)"]
+    EnvironmentVars["Environment Variables (YNAB_API_TOKEN, YNAB_BUDGET_ID)"] --> YNABSDK
+    EnvironmentVars --> ToolsDir
+4. Key Architectural Decisions & Patterns
+Framework Choice: Utilization of mcp-framework to handle MCP boilerplate and tool management. This is an existing decision being continued.
+Tool-Based Architecture: Each distinct YNAB API endpoint interaction is encapsulated within its own MCP tool. This promotes modularity and clear separation of concerns.
+Stateless Tools: Tools are designed to be stateless regarding YNAB data, fetching current data from the YNAB API on each execution. The YNAB API is the single source of truth.
+Configuration via Environment Variables: YNAB_API_TOKEN and YNAB_BUDGET_ID are sourced from process.env, consistent with current practice.
+Direct YNAB SDK Usage: Tools directly use the ynab SDK for API interactions.
+Schema Definition with Zod: Input schemas for tools are defined using zod for robust validation, as established in the existing tools.
+Error Handling: Errors from the YNAB API or internal tool logic are caught within the execute method of each tool and returned as part of the MCP response, typically as a string message or an object with an error property. logger from mcp-framework is used for server-side logging.
+Naming Convention for Tools: New tools will follow the snake_case convention for their name property, as requested (e.g., list_categories, get_transaction_by_id). File names remain PascalCaseTool.ts.
+5. Infrastructure and Deployment Overview
+Cloud Provider(s): N/A (Primarily for local execution).
+Core Services Used: N/A.
+Infrastructure as Code (IaC): N/A.
+Deployment Strategy: Local execution via npm run start or globally installed npx ynab-mcp-server after publishing. The smithery.yaml file defines how the server is started for clients like Claude Desktop using Smithery.
+Environments: Primarily local development.
+6. Key Reference Documents
+docs/prd.md (Project Brief: ynab-mcp-server API Enhancement)
+Epic files (Provided separately, detailing stories for new tools)
+docs/tech-stack.md
+docs/project-structure.md
+docs/coding-standards.md
+docs/api-reference.md (MCP Tool Reference)
+docs/data-models.md
+docs/environment-vars.md
+docs/testing-strategy.md
+YNAB API Documentation: https://api.ynab.com/
+YNAB OpenAPI Specification: https://api.ynab.com/papi/open_api_spec.yaml
+7. Change Log
+Change	Date	Version	Description	Author
+Initial draft	2025-05-18	0.1	Initial architecture document for API enhancement.	3-Architect
+
+Export to Sheets
+docs/tech-stack.md
+ynab-mcp-server API Enhancement Technology Stack
+This document outlines the key technologies and libraries used in the ynab-mcp-server API Enhancement project.
+
+Category	Technology	Version (from package.json or inferred)	Description / Purpose	Justification
+Languages	TypeScript	^5.3.3	Primary language for the server and tools.	Existing project language; strong typing, modern JavaScript features.
+Runtime	Node.js	>=20.0.0 (implied by mcp-framework)	Server-side JavaScript execution environment.	Required by mcp-framework and common for TypeScript projects.
+Frameworks	mcp-framework	^0.1.29	Core framework for building MCP servers and tools.	Existing project framework; simplifies MCP implementation.
+YNAB Interaction	ynab (Official YNAB SDK)	^2.9.0	Library for interacting with the YNAB API.	Official SDK; provides convenient API access.
+Schema/Validation	zod	^3.23.8 (from mcp-framework peer or direct)	Schema declaration and validation library.	Existing project choice; powerful and type-safe validation.
+Testing	vitest	^1.4.0	Test runner and framework.	Existing project choice (vitest.config.ts present).
+@vitest/coverage-v8	^1.4.0	Coverage reporting for vitest.	Existing project choice.
+Build Tools	typescript (tsc)	^5.3.3	TypeScript compiler.	Standard for TypeScript projects.
+mcp-build (from mcp-framework)	^0.1.29 (inferred)	Builds/packages the MCP server.	Part of mcp-framework.
+Utilities	axios	^1.8.4	HTTP client (dependency of ynab or direct use).	Commonly used for HTTP requests if needed beyond SDK.
+Dev Dependencies	@types/node	^20.11.24	Type definitions for Node.js.	Essential for TypeScript development with Node.js.
+@types/axios	^0.14.4	Type definitions for Axios.	Provides type safety for Axios.
+
+Export to Sheets
+Notes:
+Exact Node.js version should be consistent across development and deployment environments. The mcp-framework specifies >=20.0.0.
+The versions listed are based on the package.json provided (dated May 2025 for this generation). Ensure these are kept up-to-date with security patches and desired features.
+Change Log
+Change	Date	Version	Description	Author
+Initial draft	2025-05-18	0.1	Initial technology stack based on project files.	3-Architect
+
+Export to Sheets
+docs/project-structure.md
+ynab-mcp-server API Enhancement Project Structure
+This document outlines the directory and file structure for the ynab-mcp-server API Enhancement project, building upon the existing structure.
+
+Plaintext
+
+ynab-mcp-server/
+├── .cursor/                    # Cursor AI rules (existing)
+│   └── rules/
+│       └── ynabapi.mdc
+├── .vscode/                    # VSCode specific settings (e.g., launch.json)
+├── dist/                       # Compiled JavaScript output (git-ignored)
+│   ├── index.js                # Main server entry point (compiled)
+│   └── tools/                  # Compiled tools
+├── docs/                       # Project documentation (THIS DIRECTORY)
+│   ├── architecture.md         # Main architecture document
+│   ├── tech-stack.md           # Technology stack
+│   ├── project-structure.md    # This file
+│   ├── coding-standards.md     # Coding standards and patterns
+│   ├── api-reference.md        # MCP Tool API Reference
+│   ├── data-models.md          # Data models and schemas
+│   ├── environment-vars.md     # Environment variable documentation
+│   └── testing-strategy.md     # Testing strategy
+├── node_modules/               # Project dependencies (git-ignored)
+├── src/                        # Application source code
+│   ├── index.ts                # Main server entry point
+│   └── tools/                  # MCP Tool implementations
+│       ├── ApproveTransactionTool.ts
+│       ├── BudgetSummaryTool.ts
+│       ├── CreateTransactionTool.ts
+│       ├── GetUnapprovedTransactionsTool.ts
+│       ├── ListBudgetsTool.ts
+│       │
+│       ├── ListCategoriesTool.ts               # NEW (Epic 1)
+│       ├── GetCategoryTool.ts                  # NEW (Epic 1)
+│       ├── GetCategoryByMonthTool.ts           # NEW (Epic 1)
+│       ├── UpdateCategoryTool.ts               # NEW (Epic 1)
+│       ├── UpdateMonthCategoryTool.ts          # NEW (Epic 1)
+│       │
+│       ├── ListTransactionsTool.ts             # NEW (Epic 2)
+│       ├── GetTransactionByIdTool.ts         # NEW (Epic 2)
+│       ├── UpdateTransactionTool.ts            # NEW (Epic 2, enhances ApproveTransactionTool)
+│       ├── DeleteTransactionTool.ts            # NEW (Epic 2)
+│       ├── ListAccountTransactionsTool.ts      # NEW (Epic 2)
+│       ├── ListCategoryTransactionsTool.ts     # NEW (Epic 2)
+│       ├── ListPayeeTransactionsTool.ts        # NEW (Epic 2)
+│       │
+│       ├── CreateBulkTransactionsTool.ts       # NEW (Epic 3)
+│       └── UpdateBulkTransactionsTool.ts       # NEW (Epic 3)
+│
+├── .gitignore                  # Git ignore rules
+├── CHANGELOG.md                # Project changelog
+├── package-lock.json           # Exact dependency versions
+├── package.json                # Project manifest, dependencies, and scripts
+├── README.md                   # Main project README (to be updated per Epic 4)
+├── smithery.yaml               # Smithery configuration
+├── tsconfig.json               # TypeScript compiler configuration
+└── vitest.config.ts            # Vitest testing configuration
+Key Directory Descriptions:
+.cursor/: Contains rules for AI-assisted development (Cursor).
+.vscode/: Workspace settings for Visual Studio Code, like launch.json for debugging.
+dist/: Output directory for compiled TypeScript code. This directory is typically git-ignored.
+docs/: Contains all architectural and project documentation, including this file.
+node_modules/: Stores all npm dependencies. Git-ignored.
+src/: Contains all the TypeScript source code for the server.
+src/index.ts: The main entry point for the MCP server application. It initializes and starts the MCPServer.
+src/tools/: This directory houses all the individual MCP tool implementations. Each tool is a .ts file, typically defining a class that extends MCPTool.
+Root Directory Files:
+.gitignore: Specifies intentionally untracked files that Git should ignore.
+CHANGELOG.md: Records notable changes for each version.
+package.json: Defines project metadata, dependencies, and npm scripts.
+package-lock.json: Records the exact versions of dependencies.
+README.md: Provides an overview of the project, setup instructions, and (to be updated) documentation for available tools.
+smithery.yaml: Configuration for Smithery integration.
+tsconfig.json: Configuration file for the TypeScript compiler.
+vitest.config.ts: Configuration for the Vitest test runner.
+Notes:
+New tools as defined in the Epics will be added as new .ts files within the src/tools/ directory, following the existing naming convention (PascalCaseTool.ts).
+The CreateTransactionTool.ts will be enhanced as per Epic 2.3.
+The ApproveTransactionTool.ts might be deprecated or refactored if its functionality is fully covered by the more comprehensive UpdateTransactionTool.ts (from Epic 2.4). This decision should be confirmed during development.
+Change Log
+Change	Date	Version	Description	Author
+Initial draft	2025-05-18	0.1	Initial project structure for API enhancement.	3-Architect
+
+Export to Sheets
+docs/coding-standards.md
+ynab-mcp-server API Enhancement Coding Standards and Patterns
+This document outlines coding standards, patterns, and best practices to be followed for the ynab-mcp-server API Enhancement project, ensuring consistency and maintainability.
+
+1. Architectural / Design Patterns Adopted
+Tool-Based Architecture (via mcp-framework): Each piece of functionality corresponding to a YNAB API endpoint is implemented as a discrete "Tool" class extending MCPTool.
+Rationale: Modularity, clear separation of concerns, and alignment with the mcp-framework.
+Dependency Injection (Implicit): The ynab.API instance is created within each tool's constructor. While not formal DI, it centralizes API client creation. Environment variables are accessed via process.env.
+Schema-First Input Validation: Tool inputs are defined and validated using zod schemas.
+Rationale: Ensures type safety and robust input validation before processing.
+Service Facade (YNAB SDK): The ynab SDK acts as a facade to the underlying YNAB REST API, abstracting direct HTTP calls.
+2. Coding Standards
+Primary Language: TypeScript (^5.3.3 as per package.json).
+Primary Runtime: Node.js (>=20.0.0 as per mcp-framework requirements).
+Style Guide & Linter:
+While not explicitly defined in package.json (e.g., ESLint, Prettier), the existing code demonstrates a consistent style. Adhere to this style.
+Recommendation: Consider adding Prettier and ESLint with a standard configuration (e.g., eslint-config-airbnb-typescript or eslint:recommended + plugin:@typescript-eslint/recommended) to enforce consistency automatically.
+Naming Conventions:
+Tool Names (MCP Exposed): snake_case (e.g., list_categories, create_transaction) as requested for user-facing tool invocation.
+File Names: PascalCaseTool.ts for tool classes (e.g., ListCategoriesTool.ts).
+Classes & Interfaces: PascalCase (e.g., ListCategoriesTool, CreateTransactionInput).
+Methods & Functions: camelCase (e.g., execute, transformTransactions).
+Variables & Parameters: camelCase (e.g., budgetId, milliunitAmount).
+Constants: UPPER_SNAKE_CASE if applicable (though less common in this project's style).
+Type Aliases/Interfaces for Zod Schemas: PascalCase suffixed with Input or Output if not directly the main interface (e.g. ListCategoriesInput).
+File Structure: Adhere to the layout defined in docs/project-structure.md. New tools go into src/tools/.
+Asynchronous Operations: Consistently use async/await for all asynchronous operations, especially YNAB API calls.
+Type Safety:
+Leverage TypeScript's strict mode (enabled in tsconfig.json).
+Define clear interfaces for function/method parameters and return types.
+Use Zod for runtime validation of external inputs to tools.
+YNAB SDK types (e.g., ynab.TransactionDetail, ynab.Category) should be used where appropriate.
+Comments & Documentation:
+Each tool class must have a name (string literal, snake_case) and description (string literal, user-friendly) property.
+The schema object within each tool must have a description for each parameter.
+Use JSDoc-style comments for public methods and complex internal logic.
+Code should be as self-documenting as possible.
+Dependency Management:
+Use npm for package management.
+Keep dependencies updated, regularly review for security vulnerabilities.
+Avoid adding unnecessary dependencies.
+Modularity:
+Each tool should be self-contained as much as possible, with its logic primarily within its execute method.
+Helper/utility functions specific to a tool can be private methods within the tool class. Truly general utilities (if any arise) could be in a src/common/ or src/utils/ directory.
+3. Error Handling Strategy
+General Approach:
+Use try...catch blocks within the execute method of tools to handle errors from YNAB API calls or other internal logic.
+Throw standard Error objects for input validation failures not caught by Zod or for unexpected conditions (e.g., throw new Error("No budget ID provided...")).
+The mcp-framework will likely catch unhandled exceptions from execute and translate them into an MCP error response.
+Logging:
+Use the logger instance imported from mcp-framework for server-side logging.
+logger.info() for informational messages (e.g., "Listing budgets").
+logger.error() for caught errors, including stringified error objects for detail.
+Avoid logging sensitive information directly unless necessary for debugging and properly secured.
+Specific Handling Patterns:
+YNAB API Errors: The ynab SDK typically throws errors that can be caught. Inspect these errors for details (e.g., error.error.detail from YNAB's error response structure). Relay a user-friendly and informative message back to the MCP client.
+TypeScript
+
+try {
+  // ... YNAB API call
+} catch (error: any) { // Or a more specific type if known from ynab-sdk-js
+  logger.error(`Error interacting with YNAB API for ${this.name}: ${JSON.stringify(error)}`);
+  let detail = "An unexpected error occurred with the YNAB API.";
+  if (error && error.error && error.error.detail) {
+    detail = error.error.detail;
+  } else if (error instanceof Error) {
+    detail = error.message;
+  }
+  return `YNAB API Error: ${detail}`; // Or return an error object
+}
+Input Validation: Zod handles initial input validation. If further custom validation is needed within execute, throw an Error with a clear message.
+Return Values on Error: Tools should return a string message (as seen in existing tools) or a structured object indicating failure, e.g., { success: false, error: "message" }. Consistency is key. The current pattern seems to be returning a string directly for errors or an object for success. This should be standardized. Recommendation: Standardize on returning an object like { success: boolean, data?: any, error?: string } for all tools. For now, follow the mixed pattern if strict consistency with existing tools is paramount. Given the epics, a structured success object is often used (e.g. for create_transaction).
+4. YNAB Specific Patterns
+API Client Initialization: this.api = new ynab.API(process.env.YNAB_API_TOKEN || ""); in the constructor of each tool.
+Budget ID Handling: Prioritize input.budgetId if provided, otherwise use this.budgetId (from process.env.YNAB_BUDGET_ID). If neither is available, throw/return an error.
+Milliunit Conversion:
+For amounts sent to YNAB (e.g., creating/updating transactions, budgeting): Convert currency units (e.g., dollars) from tool input to milliunits (Math.round(input.amount * 1000)). Clearly document in tool schema descriptions that input amounts are in currency units.
+For amounts received from YNAB: Convert milliunits back to currency units for display/return to the user (e.g., (transaction.amount / 1000).toFixed(2)).
+Date Formatting: YNAB API typically uses ISO 8601 date strings (YYYY-MM-DD). Ensure tool inputs requiring dates specify this format in their Zod schema description and that dates are passed correctly.
+Rate Limiting: Be mindful of the YNAB API rate limit (200 requests/hour/token). Bulk operations should be preferred where available and applicable. Tools that might perform many individual calls in rapid succession (if any were designed) would need careful consideration, though current tools are single-call.
+5. Security Best Practices
+API Token: The YNAB_API_TOKEN is sensitive and handled via environment variables. It's correctly not logged or exposed directly to the MCP client.
+Input Sanitization/Validation: Zod provides primary input validation. Avoid constructing API query parameters or other sensitive strings directly from unvalidated input if Zod isn't covering a specific case (though it generally should).
+Dependency Security: Regularly audit dependencies for known vulnerabilities (e.g., using npm audit).
+Least Privilege: The YNAB API token likely has full access. This is a personal tool, so the risk profile is different, but be aware.
+Change Log
+Change	Date	Version	Description	Author
+Initial draft	2025-05-18	0.1	Initial coding standards for API enhancement.	3-Architect
+
+Export to Sheets
+docs/data-models.md
+ynab-mcp-server API Enhancement Data Models
+This document outlines the key data models and schemas used by the MCP tools, primarily focusing on tool inputs (defined via Zod) and the structure of data returned from the YNAB API.
+
+1. Core MCP Tool Input Schemas (Defined via Zod)
+Input schemas for each new tool are defined within their respective ToolName.ts files. These Zod schemas serve as the data models for tool inputs. Below are conceptual representations based on the Epics. Refer to the specific tool implementation for the canonical Zod schema.
+
+Epic 1: Core Category Endpoint Implementation
+list_categories (ListCategoriesTool)
+Input Schema (ListCategoriesInput):
+budgetId (string, optional): ID of the budget. Defaults to YNAB_BUDGET_ID.
+Output: Array of YNAB Category objects.
+get_category (GetCategoryTool)
+Input Schema (GetCategoryInput):
+budgetId (string, optional): ID of the budget. Defaults to YNAB_BUDGET_ID.
+category_id (string, required): ID of the category to retrieve.
+Output: YNAB Category object.
+get_category_by_month (GetCategoryByMonthTool)
+Input Schema (GetCategoryByMonthInput):
+budgetId (string, optional): ID of the budget. Defaults to YNAB_BUDGET_ID.
+month (string, required, format YYYY-MM-DD): The month to retrieve category details for.
+category_id (string, required): ID of the category.
+Output: YNAB Category object (with month-specific attributes).
+update_category (UpdateCategoryTool)
+Input Schema (UpdateCategoryInput):
+budgetId (string, optional): ID of the budget. Defaults to YNAB_BUDGET_ID.
+category_id (string, required): ID of the category to update.
+name (string, optional): New name for the category.
+note (string, optional, nullable): New note for the category.
+Output: Updated YNAB Category object.
+update_month_category (UpdateMonthCategoryTool)
+Input Schema (UpdateMonthCategoryInput):
+budgetId (string, optional): ID of the budget. Defaults to YNAB_BUDGET_ID.
+month (string, required, format YYYY-MM-DD): The month to update.
+category_id (string, required): ID of the category.
+budgeted (number, required): Budgeted amount in milliunits. (Tool input description should clarify if it accepts currency units and converts, or expects milliunits directly. Epics state "budgeted (number, in milliunits)" for the input, so direct milliunits is expected here).
+Output: Updated YNAB Category object for the month.
+Epic 2: Core Transaction Endpoint Implementation & Enhancement
+list_transactions (ListTransactionsTool)
+Input Schema (ListTransactionsInput):
+budgetId (string, optional): Defaults to YNAB_BUDGET_ID.
+since_date (string, optional, format YYYY-MM-DD): Filter by date.
+type (string, optional, enum: uncategorized, unapproved): Filter by type.
+Output: Array of transformed YNAB TransactionDetail objects (amounts converted).
+get_transaction_by_id (GetTransactionByIdTool)
+Input Schema (GetTransactionByIdInput):
+budgetId (string, optional): Defaults to YNAB_BUDGET_ID.
+transaction_id (string, required): ID of the transaction.
+Output: Transformed YNAB TransactionDetail object (amounts converted, including subtransactions).
+create_transaction (Enhanced CreateTransactionTool)
+Input Schema (CreateTransactionInput - Enhanced):
+budgetId (string, optional)
+accountId (string, required)
+date (string, required, format YYYY-MM-DD)
+amount (number, required, in currency units)
+payeeId (string, optional)
+payeeName (string, optional, max 50 chars)
+categoryId (string, optional)
+memo (string, optional, max 200 chars)
+cleared (enum string e.g. "cleared", "uncleared", "reconciled", optional) -> maps to ynab.TransactionClearedStatus
+approved (boolean, optional)
+flagColor (enum string e.g. "red", "orange", optional) -> maps to ynab.TransactionFlagColor
+import_id (string, optional, max 36 chars)
+subtransactions (array of SaveSubTransactionInput, optional):
+amount (number, required, in currency units)
+payeeId (string, optional)
+payeeName (string, optional, max 50 chars)
+categoryId (string, optional)
+memo (string, optional, max 200 chars)
+Output: Object with success, transactionId, message.
+update_transaction (UpdateTransactionTool)
+Input Schema (UpdateTransactionInput):
+budgetId (string, optional)
+transaction_id (string, required)
+Plus all fields from the enhanced CreateTransactionInput (except accountId might be fixed for an existing transaction, API defines what's updatable via SaveTransaction). All fields are optional for update.
+Output: Updated transformed YNAB TransactionDetail object.
+delete_transaction (DeleteTransactionTool)
+Input Schema (DeleteTransactionInput):
+budgetId (string, optional)
+transaction_id (string, required)
+Output: Transformed YNAB TransactionDetail of the deleted transaction.
+list_account_transactions (ListAccountTransactionsTool)
+Input Schema (ListAccountTransactionsInput):
+budgetId (string, optional)
+account_id (string, required)
+since_date (string, optional, format YYYY-MM-DD)
+type (string, optional, enum: uncategorized, unapproved)
+Output: Array of transformed YNAB TransactionDetail objects.
+list_category_transactions (ListCategoryTransactionsTool)
+Input Schema (ListCategoryTransactionsInput):
+budgetId (string, optional)
+category_id (string, required)
+since_date (string, optional, format YYYY-MM-DD)
+type (string, optional, enum: uncategorized, unapproved)
+Output: Array of transformed YNAB HybridTransaction objects.
+list_payee_transactions (ListPayeeTransactionsTool)
+Input Schema (ListPayeeTransactionsInput):
+budgetId (string, optional)
+payee_id (string, required)
+since_date (string, optional, format YYYY-MM-DD)
+type (string, optional, enum: uncategorized, unapproved)
+Output: Array of transformed YNAB HybridTransaction objects.
+Epic 3: Bulk Transaction Operations
+create_bulk_transactions (CreateBulkTransactionsTool)
+Input Schema (CreateBulkTransactionsInput):
+budgetId (string, optional)
+transactions (array of SaveTransactionInputForBulk, required):
+Each object mirrors SaveTransaction (similar to CreateTransactionInput but without subtransactions, as YNAB bulk API doesn't support them per item). All amounts in currency units.
+Output: YNAB BulkResponse object (data.bulk).
+update_bulk_transactions (UpdateBulkTransactionsTool)
+Input Schema (UpdateBulkTransactionsInput):
+budgetId (string, optional)
+transactions (array of UpdateTransactionForBulkInput, required):
+Each object requires id (string, transaction_id) and any other updatable fields from SaveTransaction (amounts in currency units, no subtransactions).
+Output: YNAB BulkResponse object (data.bulk).
+2. Key YNAB API Data Structures (Output from Tools)
+The tools will primarily return data structured according to the YNAB API's definitions. The ynab SDK provides TypeScript types for these. Key structures include:
+
+ynab.Category:
+id: string
+category_group_id: string
+name: string
+hidden: boolean
+note: string | null
+budgeted: number (milliunits)
+activity: number (milliunits)
+balance: number (milliunits)
+goal_type: GoalType | null
+... (and other goal-related fields, deleted status)
+ynab.TransactionDetail:
+id: string
+date: string
+amount: number (milliunits)
+memo: string | null
+cleared: TransactionClearedStatus
+approved: boolean
+flag_color: TransactionFlagColor | null
+account_id: string
+account_name: string
+payee_id: string | null
+payee_name: string | null
+category_id: string | null
+category_name: string | null
+transfer_account_id: string | null
+deleted: boolean
+subtransactions: ynab.SubTransaction[]
+Each SubTransaction has id, amount, memo, payee_id, category_id, etc.
+ynab.HybridTransaction: Similar to TransactionDetail but used by some specific listing endpoints (e.g., by category/payee). May have fewer fields or a slightly different structure (e.g., type field indicating if it's a transaction or subtransaction).
+ynab.MonthDetail: Contains monthly summary information, including an array of Category objects for that month.
+ynab.BulkResponse:
+bulk: { transaction_ids: string[], duplicate_import_ids: string[] }
+Potentially transactions if creating/updating single items within a bulk call that returns full objects (less common for pure bulk endpoints).
+Note on Transformation: As specified in existing tools and Epics, amounts (milliunits from YNAB) should be converted to currency strings (e.g., "123.45") in the output of read operations for better human readability and consistency.
+
+3. Change Log
+Change	Date	Version	Description	Author
+Initial draft	2025-05-18	0.1	Initial data models based on Epics and YNAB API structure.	3-Architect
+
+Export to Sheets
+docs/environment-vars.md
+ynab-mcp-server API Enhancement Environment Variables
+This document lists the environment variables used by the ynab-mcp-server API Enhancement application.
+
+Configuration Loading Mechanism
+Environment variables are accessed directly via process.env within the Node.js runtime. For local development, these can be set using a .env file loaded by a library like dotenv (though dotenv is not explicitly listed as a direct dependency in the provided package.json, it's a common practice; mcp-framework or its dependencies might handle this, or it's assumed to be managed by the development environment/scripts). The smithery.yaml also defines how these are passed when using Smithery.
+
+Required Variables
+Variable Name	Description	Example / Default Value	Required?	Sensitive? (Yes/No)
+YNAB_API_TOKEN	Your Personal Access Token for the YNAB API. Used to authenticate all requests to the YNAB API.	abc123xyz789_your_personal_access_token	Yes	Yes
+YNAB_BUDGET_ID	The ID of the default YNAB budget to use if a specific budgetId is not provided as a parameter to a tool.	your_budget_id_guid (e.g., a1b2c3d4-e5f6...)	No	No
+
+Export to Sheets
+Notes:
+Secrets Management:
+The YNAB_API_TOKEN is a sensitive credential and must not be hardcoded into the source code or committed to version control.
+For local development, use a .env file (added to .gitignore) or your shell's environment variable mechanisms.
+When deploying or sharing (e.g., via Smithery), the environment variable mechanism of the host or client platform should be used to securely provide this token.
+.env.example: It is recommended to maintain an .env.example file in the repository with placeholder values to guide users on the required environment variables:
+Plaintext
+
+# .env.example
+YNAB_API_TOKEN="your_ynab_personal_access_token_here"
+YNAB_BUDGET_ID="your_optional_default_budget_id_here"
+Validation:
+Tools that require YNAB_API_TOKEN (all tools interacting with the YNAB API) initialize the ynab.API client with process.env.YNAB_API_TOKEN || "". If the token is missing, the YNAB SDK will fail API calls. Some tools also have explicit checks (e.g., ListBudgetsTool).
+Tools that use YNAB_BUDGET_ID as a default check for its presence if a budgetId parameter is not supplied, and provide an error message if neither is available.
+Change Log
+Change	Date	Version	Description	Author
+Initial draft	2025-05-18	0.1	Documenting existing env var usage.	3-Architect
+
+Export to Sheets
+docs/testing-strategy.md
+ynab-mcp-server API Enhancement Testing Strategy
+This document outlines the strategy for testing the new and enhanced MCP tools within the ynab-mcp-server API Enhancement project. The project uses vitest as its testing framework, as indicated by vitest.config.ts and package.json.
+
+1. Overall Philosophy & Goals
+Goal 1: Ensure Correctness: Verify that each MCP tool correctly interacts with the YNAB API (or a mock thereof) and processes data according to its specified requirements (Epics and ACs).
+Goal 2: Prevent Regressions: Establish a suite of tests that can be run to quickly identify if new changes break existing functionality.
+Goal 3: Confidence in Refactoring: Allow developers (the primary user) to refactor code with confidence, knowing that tests will catch unintended side effects.
+Goal 4: Validate Input Handling: Ensure robust handling of valid and invalid inputs to tools.
+Focus: Testing will primarily focus on the individual logic of each tool, its interaction with the YNAB API interface, and input/output correctness.
+2. Testing Levels
+2.1 Unit Tests
+Scope: Test individual functions or methods within a tool class in isolation. This is particularly relevant for:
+Data transformation logic (e.g., converting milliunits to currency strings, formatting output).
+Complex conditional logic within the execute method if not directly tied to API calls.
+Helper methods within tool classes.
+Tools: vitest.
+Mocking/Stubbing:
+The YNAB API (this.api calls) must be mocked for unit tests to avoid actual API calls and to provide controlled responses. vitest.spyOn or vi.fn() can be used to mock methods of the ynab.API instance.
+process.env for YNAB_API_TOKEN and YNAB_BUDGET_ID can be managed using vitest.stubEnv or similar mechanisms if tests need to vary these.
+Location: src/tools/__tests__/ToolName.test.ts or alongside source files (src/tools/ToolName.test.ts). The current vitest.config.ts includes src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}.
+Expectations:
+Cover critical logic paths within helper functions or data transformations.
+Fast execution.
+Each new tool should have unit tests for any significant non-API-interaction logic.
+2.2 Integration Tests (Tool-Level against Mocked API)
+Scope: Test each MCP tool's execute method as a whole, from input processing (Zod handles initial validation) to interaction with a mocked YNAB API, and finally to the structure/content of its return value.
+Tools: vitest.
+Mocking/Stubbing:
+Mock the YNAB API client (this.api) methods to simulate various API responses (success, specific data, error conditions like "not found", "invalid token", rate limits).
+This allows testing of the tool's response to different API outcomes and its error handling logic.
+Location: Same as unit tests.
+Expectations:
+For each tool, have test cases covering:
+Successful execution with valid inputs and expected API responses.
+Handling of missing optional parameters (e.g., using YNAB_BUDGET_ID).
+Correct error message propagation when the mocked YNAB API returns an error.
+Correct data transformation of API responses.
+Adherence to Acceptance Criteria defined in the Epics.
+These will form the bulk of the automated tests.
+2.3 End-to-End (E2E) / Manual Testing (MCP Client to Live API - Caution Advised)
+Scope: Testing the full flow from an MCP client (e.g., mcp-cli, or the npm run debug inspector) to the live ynab-mcp-server interacting with the actual YNAB API.
+Tools: Manual execution using an MCP client.
+Environment: Requires a valid YNAB_API_TOKEN and potentially a dedicated test budget in YNAB to avoid impacting real financial data.
+Expectations:
+Due to the nature of this being a personal tool and the risks of interacting with a live financial API (especially for write operations), extensive automated E2E tests against the live API are not recommended as part of the primary CI/CD or frequent testing loop.
+Manual E2E testing by the developer is crucial before considering a feature complete, especially for new tools or significant changes. This involves:
+Running the server locally.
+Using an MCP client to invoke the tool with various parameters.
+Verifying the changes/data in the YNAB UI or via subsequent GET tool calls.
+For read-only (GET) tools, automated E2E tests against the live YNAB API could be considered if a stable test budget is maintained, but this adds complexity and potential for flakiness due to API rate limits or external service changes.
+Key Scenarios for Manual E2E:
+Creating, reading, updating, and deleting categories.
+Creating, reading, updating (including splits), and deleting transactions.
+Bulk operations.
+Edge cases for date formats, amounts, and optional parameters.
+3. Test Data Management
+Unit/Integration Tests:
+Mocked request/response data for YNAB API calls will be defined directly within test files (e.g., sample Category objects, TransactionDetail objects, error responses).
+Input data for tools will also be defined in test files.
+Manual E2E Tests:
+A dedicated test budget in YNAB is highly recommended to avoid corrupting real financial data. This budget can be pre-populated with sample categories, accounts, and transactions relevant to the scenarios being tested.
+Be prepared to clean up or reset this test budget periodically.
+4. CI/CD Integration
+The package.json includes test: "vitest" and test:coverage: "vitest run --coverage".
+Unit and integration tests (against mocked API) should be run automatically in any CI environment (e.g., GitHub Actions) on every push/PR.
+Builds should fail if tests fail.
+Coverage reports should be generated and reviewed.
+5. Specific Testing Considerations for New Tools
+Parameter Validation: While Zod handles schema validation, test how tools react to scenarios just outside Zod's scope if applicable, or how Zod errors are presented to the user by mcp-framework.
+Milliunit Conversion: Explicitly test the correctness of currency-to-milliunit and milliunit-to-currency conversions.
+Subtransactions: For create_transaction and update_transaction, thoroughly test the creation and modification of split transactions.
+Bulk Operations: Test with empty arrays, arrays with one item, and arrays with multiple items. Test error handling if one item in a bulk request fails.
+Idempotency: For update/create operations where import_id is used, test YNAB's idempotency behavior and ensure the tool handles duplicate import_id responses correctly (as per YNAB API spec).
+Change Log
+Change	Date	Version	Description	Author
+Initial draft	2025-05-18	0.1	Initial testing strategy for API enhancement project.	3-Architect
+
+Export to Sheets
+docs/api-reference.md
+ynab-mcp-server API Enhancement: MCP Tool Reference
+This document provides a reference for the new and enhanced MCP (Model Context Protocol) tools implemented in the ynab-mcp-server API Enhancement project. Each tool allows interaction with specific YNAB API endpoints.
+
+General Notes:
+
+Authentication: All tools require a valid YNAB_API_TOKEN to be set as an environment variable.
+Budget ID: Many tools accept an optional budgetId. If not provided, they will attempt to use the YNAB_BUDGET_ID environment variable if set. An error will occur if no budget ID context is available.
+Amounts: Unless otherwise specified for a tool's input parameter, monetary amounts in tool inputs (e.g., for creating/updating transactions) are expected in standard currency units (e.g., dollars, 10.99). These are converted to milliunits before sending to YNAB. Amounts in outputs from YNAB (which are in milliunits) are generally converted back to currency strings (e.g., "10.99") for readability.
+Dates: Dates are expected in YYYY-MM-DD ISO format.
+Error Handling: Errors from the YNAB API or internal tool logic will typically be returned as a string message or an object containing an error property. Refer to docs/coding-standards.md for details.
+Epic 1: Core Category Endpoint Implementation Tools
+1. list_categories
+Description: Lists all categories for a specified budget, retrieving their complete details.
+YNAB API: GET /budgets/{budget_id}/categories
+MCP Command Example: list_categories budget_id=my_budget_actual_id
+Parameters:
+budgetId (string, optional): The ID of the budget. If not provided, uses YNAB_BUDGET_ID.
+Example MCP Input:
+JSON
+
+{ "budgetId": "a1b2c3d4-e5f6-7890-1234-567890abcdef" }
+Or, if YNAB_BUDGET_ID is set:
+JSON
+
+{}
+Success Response: An array of YNAB Category objects. Each object includes fields like id, category_group_id, name, hidden, note, budgeted, activity, balance, goal_type, etc. (Refer to YNAB API documentation for the full Category schema).
+JSON
+
+[
+  {
+    "id": "c1a2b3d4-e5f6...",
+    "category_group_id": "g1a2b3d4...",
+    "name": "Groceries",
+    "hidden": false,
+    "note": "Weekly grocery shopping",
+    "budgeted": "500.00", // Example: Converted from 500000 milliunits
+    "activity": "-250.50", // Example: Converted from -250500 milliunits
+    "balance": "249.50",  // Example: Converted from 249500 milliunits
+    "goal_type": "TB",
+    // ... other category fields
+  }
+  // ... more categories
+]
+2. get_category
+Description: Retrieves the complete details for a single specific category by its ID within a budget.
+YNAB API: GET /budgets/{budget_id}/categories/{category_id}
+MCP Command Example: get_category budget_id=my_budget_id category_id=my_category_id
+Parameters:
+budgetId (string, optional): The ID of the budget. Defaults to YNAB_BUDGET_ID.
+category_id (string, required): The ID of the category to retrieve.
+Example MCP Input:
+JSON
+
+{
+  "budgetId": "a1b2c3d4-e5f6...",
+  "category_id": "c1a2b3d4-e5f6..."
+}
+Success Response: A single YNAB Category object.
+JSON
+
+{
+  "id": "c1a2b3d4-e5f6...",
+  "category_group_id": "g1a2b3d4...",
+  "name": "Groceries",
+  // ... other category fields
+}
+3. get_category_by_month
+Description: Retrieves the specific monthly details (budgeted, activity, balance, etc.) for a single category within a budget for a given month.
+YNAB API: GET /budgets/{budget_id}/months/{month}/categories/{category_id}
+MCP Command Example: get_category_by_month month=2025-05-01 category_id=cat_id_123
+Parameters:
+budgetId (string, optional): The ID of the budget. Defaults to YNAB_BUDGET_ID.
+month (string, required): The month in YYYY-MM-DD format (e.g., "2025-05-01").
+category_id (string, required): The ID of the category.
+Example MCP Input:
+JSON
+
+{
+  "month": "2025-05-01",
+  "category_id": "c1a2b3d4-e5f6..."
+}
+Success Response: A YNAB Category object, with attributes reflecting their values for the specified month.
+JSON
+
+{
+  "id": "c1a2b3d4-e5f6...",
+  "category_group_id": "g1a2b3d4...",
+  "name": "Dining Out",
+  "budgeted": "150.00", // Budgeted amount for May 2025
+  "activity": "-75.20",  // Activity for May 2025
+  "balance": "74.80",   // Balance for May 2025
+  // ... other category fields
+}
+4. update_category
+Description: Updates attributes of an existing category (e.g., its name or note).
+YNAB API: PATCH /budgets/{budget_id}/categories/{category_id}
+MCP Command Example: update_category category_id=cat_id_123 name="New Category Name" note="Updated note."
+Parameters:
+budgetId (string, optional): The ID of the budget. Defaults to YNAB_BUDGET_ID.
+category_id (string, required): The ID of the category to update.
+name (string, optional): The new name for the category.
+note (string, optional): The new note for the category. Can be an empty string or null to clear the note (behavior depends on YNAB API, usually empty string clears).
+Example MCP Input:
+JSON
+
+{
+  "category_id": "c1a2b3d4-e5f6...",
+  "name": "Updated Groceries",
+  "note": "All organic now."
+}
+Success Response: The updated YNAB Category object.
+JSON
+
+{
+  "id": "c1a2b3d4-e5f6...",
+  "name": "Updated Groceries",
+  "note": "All organic now.",
+  // ... other category fields
+}
+5. update_month_category
+Description: Updates the budgeted amount for a specific category in a specific month.
+YNAB API: PATCH /budgets/{budget_id}/months/{month}/categories/{category_id}
+MCP Command Example: update_month_category month=2025-06-01 category_id=cat_id_123 budgeted=200000
+Parameters:
+budgetId (string, optional): The ID of the budget. Defaults to YNAB_BUDGET_ID.
+month (string, required): The month in YYYY-MM-DD format.
+category_id (string, required): The ID of the category.
+budgeted (number, required): The new budgeted amount in milliunits. (e.g., $200.00 should be input as 200000).
+Example MCP Input:
+JSON
+
+{
+  "month": "2025-06-01",
+  "category_id": "c1a2b3d4-e5f6...",
+  "budgeted": 200000 // Represents $200.00
+}
+Success Response: The updated YNAB Category object for the specified month.
+JSON
+
+{
+  "id": "c1a2b3d4-e5f6...",
+  "name": "Savings Goal",
+  "budgeted": "200.00", // Updated budgeted amount for June 2025
+  // ... other category fields relevant to the month
+}
+Epic 2: Core Transaction Endpoint Implementation & Enhancement Tools
+6. list_transactions
+Description: Lists all transactions for a budget, with optional filtering by date and type.
+YNAB API: GET /budgets/{budget_id}/transactions
+MCP Command Example: list_transactions since_date=2025-05-01 type=unapproved
+Parameters:
+budgetId (string, optional): Defaults to YNAB_BUDGET_ID.
+since_date (string, optional, format YYYY-MM-DD): Returns transactions on or after this date.
+type (string, optional, enum: uncategorized, unapproved): Filters by transaction type. If omitted, returns all types (excluding deleted).
+Example MCP Input:
+JSON
+
+{
+  "since_date": "2025-05-01",
+  "type": "unapproved"
+}
+Success Response: An array of YNAB TransactionDetail objects (with amounts converted to currency strings).
+JSON
+
+{
+  "transactions": [
+    {
+      "id": "t1...",
+      "date": "2025-05-02",
+      "amount": "-25.50",
+      "payee_name": "Coffee Shop",
+      "approved": false,
+      // ... other TransactionDetail fields
+    }
+  ],
+  "transaction_count": 1
+}
+7. get_transaction_by_id
+Description: Retrieves the complete details for a single specific transaction by its ID.
+YNAB API: GET /budgets/{budget_id}/transactions/{transaction_id}
+MCP Command Example: get_transaction_by_id transaction_id=txn_abc123
+Parameters:
+budgetId (string, optional): Defaults to YNAB_BUDGET_ID.
+transaction_id (string, required): The ID of the transaction.
+Example MCP Input:
+JSON
+
+{ "transaction_id": "t1a2b3c4-d5e6..." }
+Success Response: A single YNAB TransactionDetail object (with amounts converted, including subtransactions).
+JSON
+
+{
+  "id": "t1a2b3c4-d5e6...",
+  "date": "2025-05-10",
+  "amount": "-100.00",
+  "payee_name": "Supermarket",
+  "approved": true,
+  "subtransactions": [
+    { "id": "st1...", "amount": "-60.00", "category_name": "Groceries" },
+    { "id": "st2...", "amount": "-40.00", "category_name": "Household" }
+  ]
+  // ... other TransactionDetail fields
+}
+8. create_transaction (Enhanced)
+Description: Creates a new single transaction, with support for all available YNAB API parameters including subtransactions (splits). Amounts are input in currency units.
+YNAB API: POST /budgets/{budget_id}/transactions
+MCP Command Example (Simple): create_transaction accountId=acc_id date=2025-05-18 amount=12.34 payeeName="Lunch Place" categoryId=cat_food
+MCP Command Example (Split): create_transaction accountId=acc_id date=2025-05-18 amount=100 payeeName="Electronics Store" subtransactions='[{"amount": 60, "categoryId": "cat_electronics"}, {"amount": 40, "categoryId": "cat_software"}]'
+Parameters:
+budgetId (string, optional): Defaults to YNAB_BUDGET_ID.
+accountId (string, required): Account ID for the transaction.
+date (string, required, format YYYY-MM-DD).
+amount (number, required): Total transaction amount in currency units (e.g., 12.34 for $12.34).
+payeeId (string, optional): ID of the payee.
+payeeName (string, optional): Name of the payee (max 50 chars). One of payeeId or payeeName is typically needed unless it's a transfer.
+categoryId (string, optional): Category ID for the transaction (not used if subtransactions are provided with their own categories).
+memo (string, optional, max 200 chars).
+cleared (string, optional, enum: "cleared", "uncleared", "reconciled"). Maps to ynab.TransactionClearedStatus.
+approved (boolean, optional, defaults to false).
+flagColor (string, optional, enum: "red", "orange", "yellow", "green", "blue", "purple"). Maps to ynab.TransactionFlagColor.
+import_id (string, optional, max 36 chars): For matching with bank imports.
+subtransactions (array, optional): Array of subtransaction objects:
+amount (number, required): Amount of the subtransaction in currency units.
+payeeId (string, optional).
+payeeName (string, optional, max 50 chars).
+categoryId (string, optional).
+memo (string, optional, max 200 chars).
+Example MCP Input (Split Transaction):
+JSON
+
+{
+  "accountId": "acc_id_xyz",
+  "date": "2025-05-18",
+  "amount": 100.00,
+  "payeeName": "Electronics Store",
+  "subtransactions": [
+    { "amount": 60.00, "categoryId": "cat_electronics_guid", "memo": "New Gadget" },
+    { "amount": 40.00, "categoryId": "cat_software_guid", "memo": "Accessory App" }
+  ]
+}
+Success Response:
+JSON
+
+{
+  "success": true,
+  "transactionId": "new_txn_guid",
+  "message": "Transaction created successfully",
+  // May also include transaction_ids, duplicate_import_ids, etc. from YNAB's response.
+  // The current CreateTransactionTool returns transaction (singular), the YNAB API may return more.
+  // YNAB POST /transactions returns { data: { transaction_ids: string[], transaction: TransactionDetail (if single), transactions: TransactionDetail[] (if multiple, less common here), duplicate_import_ids: string[] } }
+  // For a single transaction creation, it returns the full TransactionDetail object in `response.data.transaction`.
+  "transaction": { /* Full TransactionDetail of the created transaction */ }
+}
+9. update_transaction
+Description: Updates any mutable field of an existing transaction, including its subtransactions.
+YNAB API: PUT /budgets/{budget_id}/transactions/{transaction_id}
+MCP Command Example: update_transaction transaction_id=txn_abc123 memo="Updated item" amount=55.00
+Parameters:
+budgetId (string, optional): Defaults to YNAB_BUDGET_ID.
+transaction_id (string, required): The ID of the transaction to update.
+All other fields from the enhanced create_transaction input schema are optional and can be provided to update the transaction. (e.g., accountId, date, amount, payeeId, payeeName, categoryId, memo, cleared, approved, flagColor, import_id, subtransactions).
+Example MCP Input:
+JSON
+
+{
+  "transaction_id": "t1a2b3c4-d5e6...",
+  "memo": "Corrected memo and amount",
+  "amount": 55.00, // New total amount in currency units
+  "approved": true
+}
+Success Response: The updated YNAB TransactionDetail object (with amounts converted).
+JSON
+
+{
+  "id": "t1a2b3c4-d5e6...",
+  "memo": "Corrected memo and amount",
+  "amount": "-55.00",
+  "approved": true,
+  // ... other TransactionDetail fields
+}
+10. delete_transaction
+Description: Deletes a specific transaction by its ID.
+YNAB API: DELETE /budgets/{budget_id}/transactions/{transaction_id}
+MCP Command Example: delete_transaction transaction_id=txn_abc123
+Parameters:
+budgetId (string, optional): Defaults to YNAB_BUDGET_ID.
+transaction_id (string, required): The ID of the transaction to delete.
+Example MCP Input:
+JSON
+
+{ "transaction_id": "t1a2b3c4-d5e6..." }
+Success Response: The YNAB TransactionDetail of the deleted transaction (with amounts converted).
+JSON
+
+{
+  "id": "t1a2b3c4-d5e6...",
+  "deleted": true,
+  // ... other fields of the deleted transaction
+}
+11. list_account_transactions
+Description: Lists all transactions for a specific account within a budget.
+YNAB API: GET /budgets/{budget_id}/accounts/{account_id}/transactions
+MCP Command Example: list_account_transactions account_id=acc_xyz since_date=2025-04-01
+Parameters:
+budgetId (string, optional): Defaults to YNAB_BUDGET_ID.
+account_id (string, required): The ID of the account.
+since_date (string, optional, format YYYY-MM-DD).
+type (string, optional, enum: uncategorized, unapproved).
+Success Response: An array of YNAB TransactionDetail objects (amounts converted).
+12. list_category_transactions
+Description: Lists all transactions for a specific category within a budget.
+YNAB API: GET /budgets/{budget_id}/categories/{category_id}/transactions
+MCP Command Example: list_category_transactions category_id=cat_xyz since_date=2025-01-01
+Parameters:
+budgetId (string, optional): Defaults to YNAB_BUDGET_ID.
+category_id (string, required): The ID of the category.
+since_date (string, optional, format YYYY-MM-DD).
+type (string, optional, enum: uncategorized, unapproved).
+Success Response: An array of YNAB HybridTransaction objects (amounts converted). Note: HybridTransaction is used by this specific YNAB endpoint.
+13. list_payee_transactions
+Description: Lists all transactions for a specific payee within a budget.
+YNAB API: GET /budgets/{budget_id}/payees/{payee_id}/transactions
+MCP Command Example: list_payee_transactions payee_id=payee_xyz
+Parameters:
+budgetId (string, optional): Defaults to YNAB_BUDGET_ID.
+payee_id (string, required): The ID of the payee.
+since_date (string, optional, format YYYY-MM-DD).
+type (string, optional, enum: uncategorized, unapproved).
+Success Response: An array of YNAB HybridTransaction objects (amounts converted).
+Epic 3: Bulk Transaction Operations Tools
+14. create_bulk_transactions
+Description: Creates multiple new transactions in a single API call. Subtransactions are not supported for individual items in this bulk call. Amounts are input in currency units.
+YNAB API: POST /budgets/{budget_id}/transactions/bulk
+MCP Command Example: create_bulk_transactions transactions='[{"accountId": "id1", "date": "2025-05-18", "amount": 10, "payeeName": "P1"}, {"accountId": "id2", "date": "2025-05-19", "amount": 20, "payeeName": "P2"}]'
+Parameters:
+budgetId (string, optional): Defaults to YNAB_BUDGET_ID.
+transactions (array, required): An array of transaction objects to create. Each object should follow the structure of SaveTransaction (similar to create_transaction input, but without subtransactions field).
+accountId (string, required)
+date (string, required, format YYYY-MM-DD)
+amount (number, required, in currency units)
+payeeId (string, optional)
+payeeName (string, optional)
+categoryId (string, optional)
+memo (string, optional)
+cleared (string, optional)
+approved (boolean, optional)
+flagColor (string, optional)
+import_id (string, optional)
+Example MCP Input:
+JSON
+
+{
+  "transactions": [
+    { "accountId": "acc_id1", "date": "2025-05-18", "amount": 10.50, "payeeName": "Vendor A", "categoryId": "cat_id1" },
+    { "accountId": "acc_id1", "date": "2025-05-19", "amount": 22.00, "payeeName": "Vendor B", "categoryId": "cat_id2", "approved": true }
+  ]
+}
+Success Response: YNAB BulkResponse object.
+JSON
+
+{
+  "bulk": {
+    "transaction_ids": ["t1_guid", "t2_guid"],
+    "duplicate_import_ids": []
+  }
+}
+15. update_bulk_transactions
+Description: Updates multiple existing transactions in a single API call (e.g., for bulk approval or categorization). Subtransactions are not updated via this endpoint. Amounts are input in currency units.
+YNAB API: PATCH /budgets/{budget_id}/transactions (Note: YNAB API uses PATCH for bulk updates, not PUT)
+MCP Command Example: update_bulk_transactions transactions='[{"id": "txn1", "approved": true}, {"id": "txn2", "categoryId": "cat_id_new"}]'
+Parameters:
+budgetId (string, optional): Defaults to YNAB_BUDGET_ID.
+transactions (array, required): An array of transaction objects to update. Each object must include id (the transaction ID) and any fields to be updated (from SaveTransaction structure, excluding subtransactions).
+id (string, required)
+... (other optional fields like accountId, date, amount, payeeId, payeeName, categoryId, memo, cleared, approved, flagColor, import_id)
+Example MCP Input:
+JSON
+
+{
+  "transactions": [
+    { "id": "t1a2b3c4...", "approved": true, "categoryId": "cat_id_food" },
+    { "id": "t5x6y7z8...", "memo": "Updated bulk memo", "amount": 75.00 }
+  ]
+}
+Success Response: YNAB BulkResponse object.
+JSON
+
+{
+  "bulk": {
+    "transaction_ids": ["t1a2b3c4...", "t5x6y7z8..."],
+    "duplicate_import_ids": []
+  }
+}
+Change Log
+Change	Date	Version	Description	Author
+Initial draft	2025-05-18	0.1	Initial API reference for new and enhanced MCP tools.	3-Architect
+
+Export to Sheets

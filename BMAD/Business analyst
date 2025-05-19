@@ -1,0 +1,195 @@
+Project Brief: ynab-mcp-server API Enhancement
+
+Introduction / Problem Statement
+
+The core idea is to extend the existing ynab-mcp-server (found at https://github.com/calebl/ynab-mcp-server) to support all available YNAB API endpoints related to categories and transactions, as defined in the OpenAPI spec (https://api.ynab.com/papi/open_api_spec.yaml).
+
+The problem being solved is that the current ynab-mcp-server does not implement the full range of these YNAB API endpoints, limiting its utility for comprehensive programmatic interaction with YNAB category and transaction data for personal use. This project is needed to unlock the full potential of the YNAB API for personalized automation and data manipulation through the MCP interface.
+
+
+
+Vision & Goals
+
+Vision: To have a version of ynab-mcp-server that provides complete and granular control over YNAB budget categories and financial transactions via its Model Context Protocol (MCP) interface, enabling sophisticated personal financial workflows and data interaction.
+
+Primary Goals:Goal 1: Implement all GET (read) operations for YNAB categories, category-specific details (including by month), and associated transactions as defined in the YNAB OpenAPI specification, integrated as tools within the ynab-mcp-server framework within the next 2-3 months.
+
+Goal 2: Implement all POST (create), PUT/PATCH (update), and DELETE (remove) operations for YNAB categories and transactions (single and bulk) as defined in the YNAB OpenAPI specification, integrated as tools within the ynab-mcp-server framework within the next 2-3 months.
+
+Goal 3: Ensure each newly implemented MCP tool corresponding to a YNAB API endpoint is clearly documented within the project's README, including example usage and expected parameters, upon completion of its development.
+
+Success Metrics (Initial Ideas):100% coverage of category and transaction-related endpoints from the YNAB OpenAPI v1 spec (https://api.ynab.com/papi/open_api_spec.yaml) implemented as functional MCP tools.
+
+Successful execution of test cases for each implemented endpoint tool, covering primary use cases (e.g., creating, retrieving, updating, deleting categories/transactions, handling of subtransactions/splits if supported by API).
+
+The user (myself) can perform all intended personal YNAB category and transaction management tasks programmatically using the enhanced ynab-mcp-server.
+
+Target Audience / Users
+
+Primary User: Myself (the project initiator).
+
+Key Characteristics:Developer/Technically proficient user.
+
+Regular YNAB user for personal finance management.
+
+Desires to automate, customize, or interact with YNAB data in ways not easily achievable through the standard YNAB web/mobile applications.
+
+Comfortable with command-line interfaces and the Model Context Protocol.
+
+Utilizing this for personal efficiency and customized financial insights/workflows.
+
+Key Features / Scope (High-Level Ideas for MVP)
+
+The MVP will focus on implementing MCP tools that map to the following YNAB API functionalities for categories and transactions:
+
+Category Endpoints:
+
+
+
+List categories for a budget (GET /budgets/{budget_id}/categories)
+
+Get a single category (GET /budgets/{budget_id}/categories/{category_id})
+
+Update a category (e.g., rename, note) (PATCH /budgets/{budget_id}/categories/{category_id})
+
+Get a category for a specific month (budgeted, activity, balance) (GET /budgets/{budget_id}/months/{month}/categories/{category_id})
+
+Update a category for a specific month (assign budgeted amount) (PATCH /budgets/{budget_id}/months/{month}/categories/{category_id})
+
+Transaction Endpoints:
+
+
+
+List transactions for a budget (with support for query parameters like since_date, type) (GET /budgets/{budget_id}/transactions)
+
+Create a single new transaction (enhancing existing tool if necessary for full parameter support) (POST /budgets/{budget_id}/transactions)
+
+Create multiple new transactions in bulk (POST /budgets/{budget_id}/transactions/bulk)
+
+Get a single transaction (GET /budgets/{budget_id}/transactions/{transaction_id})
+
+Update an existing transaction (ensure full parameter support, including split transactions if the API treats them as updates to a parent transaction with subtransactions) (PUT /budgets/{budget_id}/transactions/{transaction_id})
+
+Update multiple transactions (e.g., bulk approval, categorization) (PATCH /budgets/{budget_id}/transactions)
+
+Delete a transaction (DELETE /budgets/{budget_id}/transactions/{transaction_id})
+
+Contextual Transaction Endpoints:
+
+
+
+List transactions for an account (GET /budgets/{budget_id}/accounts/{account_id}/transactions)
+
+List transactions for a category (GET /budgets/{budget_id}/categories/{category_id}/transactions)
+
+List transactions for a payee (GET /budgets/{budget_id}/payees/{payee_id}/transactions)
+
+Out of Scope for this MVP:
+
+
+
+Graphical User Interface (GUI).
+
+Implementation of YNAB API endpoints not directly related to categories or transactions.
+
+Advanced user management or authentication schemes beyond personal access tokens.
+
+Hosting or deployment concerns beyond local execution for personal use.
+
+Known Technical Constraints or Preferences
+
+Constraints:The solution must be an extension of the existing ynab-mcp-server project (https://github.com/calebl/ynab-mcp-server), likely maintaining Go as the primary language and leveraging the existing MCP framework.
+
+Strictly for personal use.
+
+All API interactions must adhere to YNAB's API rate limits (currently 200 requests per hour per token).
+
+Authentication with the YNAB API will continue to use Personal Access Tokens.
+
+Risks:The complexity of comprehensively mapping all parameters and response structures of the YNAB API endpoints to intuitive MCP tool interfaces.
+
+The time investment required to implement, test, and document each of the targeted endpoints.
+
+Potential breaking changes in future versions of the YNAB API that could require maintenance.
+
+Unforeseen limitations or difficulties in working with the mcp-framework for some of the more complex API interactions (as noted in the original ynab-mcp-server README regarding potential direct SDK usage).
+
+Relevant Research (Optional)
+
+Initial research and analysis of the YNAB API, existing official SDKs (e.g., Python, Ruby), and community tools (including the existing ynab-mcp-server and its documented TODOs) indicate that the YNAB API is well-documented with an OpenAPI specification, making systematic endpoint implementation feasible.
+
+Key findings include:
+
+
+
+The YNAB OpenAPI specification (https://api.ynab.com/papi/open_api_spec.yaml) is the definitive source for endpoint definitions.
+
+The existing ynab-mcp-server already provides a foundation for adding new tools. Its README includes TODOs that align with this project's goals (e.g., "updateCategory tool," "approve multiple transactions").
+
+YNAB's official API documentation and SDKs showcase common patterns for interacting with categories and transactions, including bulk operations and specific filtering.
+
+Integrations like Zapier and Make.com highlight popular automated use cases such as creating transactions based on triggers and programmatically assigning funds to categories.
+
+Awareness of API rate limits (200 requests/hour) is crucial for designing tools that might perform multiple operations.
+
+Transaction import IDs affect matching behavior with bank-imported transactions.
+
+PM Prompt
+
+This section provides a handoff prompt for initiating the detailed planning and task breakdown for this project.
+
+PM Agent Handoff Prompt Example (for personal project tracking)
+
+Project: ynab-mcp-server API Enhancement
+
+Summary of Key Insights:
+
+This project aims to significantly enhance the ynab-mcp-server by implementing full support for all YNAB API v1 category and transaction endpoints. The goal is to provide comprehensive programmatic control over YNAB budget data for personal use, leveraging the existing MCP framework. The current server has a good foundation but lacks coverage for many useful API calls detailed in the official YNAB OpenAPI specification.
+
+Areas Requiring Special Attention:
+
+
+
+Endpoint Mapping: Diligently map all request/response fields for each YNAB API endpoint to the corresponding MCP tool's inputs and outputs. Pay attention to optional parameters, data types (especially milliunits for currency), and date formats.
+
+Bulk Operations: The POST /budgets/{budget_id}/transactions/bulk and PATCH /budgets/{budget_id}/transactions endpoints will require careful implementation to handle arrays of transaction objects correctly.
+
+Idempotency & Error Handling: While the YNAB API handles its own idempotency for some mutating requests, ensure the MCP tools provide clear feedback on success or failure, passing through relevant error messages from the API.
+
+Subtransactions/Splits: Investigate how split transactions are represented and manipulated via the API (e.g., as part of a parent transaction or as linked transactions) and ensure the "Update Transaction" and "Create Transaction" tools can handle them if the API permits.
+
+Testing: Develop a simple testing strategy for each new tool to confirm it interacts correctly with the YNAB API (e.g., creating a test category, adding a transaction to it, updating it, then deleting it).
+
+Documentation: Maintain clear, concise documentation for each new tool within the project's README, showing example usage.
+
+Development Context:
+
+This is a personal project building upon an existing open-source Go application (ynab-mcp-server). The primary driver is to expand personal automation capabilities with YNAB. The YNAB API reference (https://api.ynab.com/papi/) and the OpenAPI spec (https://api.ynab.com/papi/open_api_spec.yaml) are the primary sources of truth for API behavior.
+
+Guidance on PRD/Task Detail Level (for personal planning):
+
+
+
+Create a checklist or task list for each YNAB API endpoint related to categories and transactions.
+
+For each endpoint, outline:The HTTP method and path.
+
+Key request parameters (path, query, body).
+
+Expected response structure (key fields).
+
+The corresponding MCP tool name and its expected command-line signature/arguments.
+
+Prioritize GET endpoints first for foundational data retrieval, followed by POST, PUT/PATCH, and DELETE.
+
+Consider tackling simpler endpoints before more complex ones (e.g., single transaction before bulk transactions).
+
+User Preferences (Self-Directed):
+
+
+
+The implementation should remain within the existing ynab-mcp-server structure unless a compelling technical reason arises to deviate (e.g., insurmountable framework limitations for specific API calls).
+
+Focus on functionality and correctness over elaborate error handling beyond what's necessary for personal debugging.
+
+Code should be reasonably clean and maintainable for future personal use.

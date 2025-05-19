@@ -1,0 +1,2031 @@
+Okay, I am now in PO Mode. I will start the analysis of the provided materials: Epics 1-4 and the supporting documents (`architecture.md`, `tech-stack.md`, `project-structure.md`, `coding-standards.md`, `data-models.md`, `environment-vars.md`, `testing-strategy.md`, and `api-reference.md`).
+
+I will use the `templates/po-checklist.txt` to validate the plan.
+
+Reviewing the provided Epics and supporting documents against the PO Checklist...
+
+---
+
+## PO Validation Checklist Analysis:
+
+### 1. PROJECT SETUP & INITIALIZATION
+
+#### 1.1 Project Scaffolding
+- **[PASS] Epic 1 includes explicit steps for project creation/initialization**: While not "creation" from scratch (as it's an existing project), Epic 1 details the creation of new tool files (e.g., `src/tools/ListCategoriesTool.ts`) which is appropriate for enhancing an existing project.
+- **[N/A] If using a starter template, steps for cloning/setup are included**: Not a new project.
+- **[N/A] If building from scratch, all necessary scaffolding steps are defined**: Not from scratch.
+- **[PASS] Initial README or documentation setup is included**: Epic 4 is dedicated to updating `README.md`.
+- **[N/A] Repository setup and initial commit processes are defined (if applicable)**: Existing project.
+
+#### 1.2 Development Environment
+- **[PASS] Local development environment setup is clearly defined**: The main `README.md` (provided as context) has a "Setup" and "Quick Start" section. `docs/tech-stack.md` lists Node.js and TypeScript versions.
+- **[PASS] Required tools and versions are specified (Node.js, Python, etc.)**: `docs/tech-stack.md` clearly lists TypeScript, Node.js, `mcp-framework`, `ynab` SDK, `zod`, `vitest`.
+- **[PASS] Steps for installing dependencies are included**: `README.md` mentions `npm install`. `package.json` is present.
+- **[PASS] Configuration files (dotenv, config files, etc.) are addressed**: `docs/environment-vars.md` specifies `YNAB_API_TOKEN` and `YNAB_BUDGET_ID`. The `smithery.yaml` also shows how these are passed.
+- **[PASS] Development server setup is included**: `README.md` mentions `npm run start` and `npm run debug`.
+
+#### 1.3 Core Dependencies
+- **[PASS] All critical packages/libraries are installed early in the process**: Epics assume these are part of the existing project structure, and `docs/tech-stack.md` confirms their presence. New tools in Epics 1-3 build upon these.
+- **[PASS] Package management (npm, pip, etc.) is properly addressed**: `npm` is used, as per `package.json` and `README.md`.
+- **[PASS] Version specifications are appropriately defined**: `package.json` and `docs/tech-stack.md` list versions.
+- **[PASS] Dependency conflicts or special requirements are noted**: None explicitly noted as problematic, but `docs/tech-stack.md` lists peer dependencies for `mcp-framework`.
+
+### 2. INFRASTRUCTURE & DEPLOYMENT SEQUENCING
+*(Note: This project is a server-side application primarily for local execution, interacting with an external API (YNAB). "Infrastructure" here refers more to the project's internal structure and external API dependencies rather than cloud infra.)*
+
+#### 2.1 Database & Data Store Setup
+- **[N/A] Database selection/setup occurs before any database operations**: The application is stateless and uses YNAB as the data store.
+
+#### 2.2 API & Service Configuration
+- **[PASS] API frameworks are set up before implementing endpoints**: The `mcp-framework` is the existing API framework. Epics 1, 2, and 3 focus on adding new tools (endpoints) within this framework.
+- **[PASS] Service architecture is established before implementing services**: `docs/architecture.md` outlines the tool-based architecture.
+- **[PASS] Authentication framework is set up before protected routes**: Authentication is via `YNAB_API_TOKEN` passed to the `ynab` SDK, which is a core part of each tool's setup.
+- **[PASS] Middleware and common utilities are created before use**: The `mcp-framework` handles common request/response. YNAB SDK handles API interaction. Specific transformations (e.g., milliunits) are part of tool implementation.
+
+#### 2.3 Deployment Pipeline
+- **[PASS] CI/CD pipeline is established before any deployment actions**: `README.md` mentions `npm run build`. `docs/architecture.md` mentions "Local execution via `npm run start` or globally installed `npx ynab-mcp-server` after publishing." While not a full CI/CD for cloud deployment, the build and publishing process is addressed.
+- **[N/A] Infrastructure as Code (IaC) is set up before use**: Not applicable for this project type.
+- **[PASS] Environment configurations (dev, staging, prod) are defined early**: `docs/environment-vars.md` is clear. Primarily local dev.
+- **[PASS] Deployment strategies are defined before implementation**: Local execution and `npm publish` are mentioned.
+- **[N/A] Rollback procedures or considerations are addressed**: Likely managed by `npm` versioning if published.
+
+#### 2.4 Testing Infrastructure
+- **[PASS] Testing frameworks are installed before writing tests**: `vitest` is specified in `docs/tech-stack.md` and `package.json`. `vitest.config.ts` exists.
+- **[PASS] Test environment setup precedes test implementation**: `docs/testing-strategy.md` outlines unit and integration testing approaches.
+- **[PASS] Mock services or data are defined before testing**: `docs/testing-strategy.md` explicitly states the YNAB API will be mocked.
+- **[PASS] Test utilities or helpers are created before use**: Assumed to be part of test file setup; strategy mentions mocking API client methods.
+
+### 3. EXTERNAL DEPENDENCIES & INTEGRATIONS
+
+#### 3.1 Third-Party Services
+- **[PASS] Account creation steps are identified for required services**: The project relies on the user having a YNAB account and generating a Personal Access Token. This is mentioned in the `README.md`.
+- **[PASS] API key acquisition processes are defined**: `README.md` links to YNAB's documentation for token generation.
+- **[PASS] Steps for securely storing credentials are included**: `docs/environment-vars.md` and `smithery.yaml` emphasize using environment variables. `README.md` also states the token is stored in an environment variable.
+- **[N/A] Fallback or offline development options are considered**: The tool's nature is to interact directly with YNAB; offline mode is not a feature.
+
+#### 3.2 External APIs
+- **[PASS] Integration points with external APIs are clearly identified**: All Epics (1-3) clearly map tools to specific YNAB API v1 endpoints. `docs/api-reference.md` also details this.
+- **[PASS] Authentication with external services is properly sequenced**: Each tool constructor initializes the `ynab.API` with the token.
+- **[PASS] API limits or constraints are acknowledged**: `docs/coding-standards.md` mentions rate limiting awareness.
+- **[PASS] Backup strategies for API failures are considered**: Error handling for API issues is mentioned as an AC in many stories and discussed in `docs/coding-standards.md`.
+
+#### 3.3 Infrastructure Services
+- **[N/A] Cloud resource provisioning is properly sequenced**: Not applicable.
+- **[N/A] DNS or domain registration needs are identified**: Not applicable.
+- **[N/A] Email or messaging service setup is included if needed**: Not applicable.
+- **[N/A] CDN or static asset hosting setup precedes their use**: Not applicable.
+
+### 4. USER/AGENT RESPONSIBILITY DELINEATION
+
+#### 4.1 User Actions
+- **[PASS] User responsibilities are limited to only what requires human intervention**: User needs to provide YNAB API token and budget ID (if not default). User formulates MCP requests.
+- **[PASS] Account creation on external services is properly assigned to users**: User creates their YNAB account and PAT.
+- **[N/A] Purchasing or payment actions are correctly assigned to users**: Not applicable.
+- **[PASS] Credential provision is appropriately assigned to users**: User provides `YNAB_API_TOKEN`.
+
+#### 4.2 Developer Agent Actions
+- **[PASS] All code-related tasks are assigned to developer agents**: The epics and stories describe development tasks for an agent/developer.
+- **[PASS] Automated processes are correctly identified as agent responsibilities**: The server itself is an automated process.
+- **[PASS] Configuration management is properly assigned**: Tool files use `process.env` for configuration.
+- **[PASS] Testing and validation are assigned to appropriate agents**: `docs/testing-strategy.md` describes developer-executed tests.
+
+### 5. FEATURE SEQUENCING & DEPENDENCIES
+
+#### 5.1 Functional Dependencies
+- **[PASS] Features that depend on other features are sequenced correctly**:
+    - Epics 1 (Categories) and 2 (Transactions) are largely independent but both foundational.
+    - Epic 3 (Bulk Transactions) depends on the understanding of single transaction structures from Epic 2.
+    - Epic 4 (Documentation) naturally comes last.
+- **[PASS] Shared components are built before their use**: The `mcp-framework` and `ynab` SDK are existing shared components. New tools are discrete.
+- **[PASS] User flows follow a logical progression**: The tools enable discrete actions; complex user flows are composed by the user invoking multiple tools.
+- **[PASS] Authentication features precede protected routes/features**: API token handling is integral to all tools.
+
+#### 5.2 Technical Dependencies
+- **[PASS] Lower-level services are built before higher-level ones**: YNAB SDK is the low-level service. Tools are higher-level abstractions.
+- **[PASS] Libraries and utilities are created before their use**: Core libraries are pre-existing.
+- **[PASS] Data models are defined before operations on them**: `docs/data-models.md` outlines Zod schemas for inputs and YNAB API structures for outputs. Each tool defines its Zod schema.
+- **[PASS] API endpoints are defined before client consumption**: MCP tools *are* the "API endpoints" of this server.
+
+#### 5.3 Cross-Epic Dependencies
+- **[PASS] Later epics build upon functionality from earlier epics**: Epic 3 (Bulk) builds on concepts from Epic 2 (Single Transactions). Epic 4 (Docs) covers all.
+- **[PASS] No epic requires functionality from a later epic**: Sequence is logical.
+- **[PASS] Infrastructure established in early epics is utilized consistently**: The "infrastructure" (tool structure, YNAB SDK usage, env vars) is consistent.
+- **[PASS] Incremental value delivery is maintained**: Each epic delivers a clear set of new functionalities.
+
+### 6. MVP SCOPE ALIGNMENT
+
+#### 6.1 PRD Goals Alignment
+- **[PASS] All core goals defined in the PRD are addressed in epics/stories**: The PRD (inferred from provided goal in `docs/architecture.md`: "provide a comprehensive set of tools for interacting with the You Need A Budget (YNAB) API, specifically focusing on category and transaction management. The architecture emphasizes adding new, discrete tools that correspond to YNAB API v1 endpoints, ensuring full coverage as per the project goals.") is well covered by Epics 1 (Categories) and 2 & 3 (Transactions).
+- **[PASS] Features directly support the defined MVP goals**: All tools directly map to YNAB API interactions for categories and transactions.
+- **[PASS] No extraneous features beyond MVP scope are included**: Scope seems focused on YNAB API coverage for categories and transactions.
+- **[PASS] Critical features are prioritized appropriately**: Category and transaction management are core to YNAB.
+
+#### 6.2 User Journey Completeness
+- **[PASS] All critical user journeys are fully implemented**: The plan covers listing, getting, creating, updating, and deleting for categories and transactions, plus bulk operations. These form the building blocks for user journeys.
+- **[PASS] Edge cases and error scenarios are addressed**: ACs in stories frequently mention error handling. `docs/coding-standards.md` details error strategy.
+- **[N/A] User experience considerations are included**: This is an API server; UX is more about the developer experience of using the tools, which seems well-considered (clear names, parameters).
+- **[N/A] Accessibility requirements are incorporated if specified**: Not applicable for an API server.
+
+#### 6.3 Technical Requirements Satisfaction
+- **[PASS] All technical constraints from the PRD are addressed**: Adherence to `mcp-framework`, TypeScript, YNAB SDK, as seen in `docs/architecture.md` and `docs/tech-stack.md`.
+- **[PASS] Non-functional requirements are incorporated**: Error handling, use of env vars for security.
+- **[PASS] Architecture decisions align with specified constraints**: Tool-based architecture is consistent.
+- **[PASS] Performance considerations are appropriately addressed**: Bulk endpoints are used where appropriate (Epic 3). Rate limiting is acknowledged.
+
+### 7. RISK MANAGEMENT & PRACTICALITY
+
+#### 7.1 Technical Risk Mitigation
+- **[PASS] Complex or unfamiliar technologies have appropriate learning/prototyping stories**: Not introducing new, complex tech; enhancing existing patterns.
+- **[PASS] High-risk components have explicit validation steps**: Write operations (create, update, delete) inherently carry more risk. ACs and testing strategy (manual E2E for writes) address this.
+- **[PASS] Fallback strategies exist for risky integrations**: Error handling for YNAB API issues is a common theme.
+- **[PASS] Performance concerns have explicit testing/validation**: Addressed by using bulk endpoints and acknowledging rate limits.
+
+#### 7.2 External Dependency Risks
+- **[PASS] Risks with third-party services are acknowledged and mitigated**: YNAB API is the main dependency. Mitigation is through error handling and clear API interaction patterns.
+- **[PASS] API limits or constraints are addressed**: Mentioned in `docs/coding-standards.md`.
+- **[N/A] Backup strategies exist for critical external services**: The YNAB API is the source of truth; backups are YNAB's responsibility.
+- **[PASS] Cost implications of external services are considered**: YNAB API is generally free for personal use with a token.
+
+#### 7.3 Timeline Practicality
+- **[PASS] Story complexity and sequencing suggest a realistic timeline**: Stories are granular and build logically.
+- **[PASS] Dependencies on external factors are minimized or managed**: Main dependency is the YNAB API itself.
+- **[PASS] Parallel work is enabled where possible**: Different tools within an epic, or even different epics (e.g., Epic 1 and Epic 2 tools), could largely be developed in parallel.
+- **[PASS] Critical path is identified and optimized**: Core SDK integration is existing. Path involves creating individual, mostly independent tools.
+
+### 8. DOCUMENTATION & HANDOFF
+
+#### 8.1 Developer Documentation
+- **[PASS] API documentation is created alongside implementation**: `docs/api-reference.md` is to be updated/created. Epic 4 covers README updates for tool usage.
+- **[PASS] Setup instructions are comprehensive**: `README.md` (existing) and `docs/environment-vars.md`.
+- **[PASS] Architecture decisions are documented**: `docs/architecture.md`.
+- **[PASS] Patterns and conventions are documented**: `docs/coding-standards.md`.
+
+#### 8.2 User Documentation
+- **[PASS] User guides or help documentation is included if required**: `README.md` (Epic 4) will serve as the primary user guide for the tools. `docs/api-reference.md` provides detailed reference.
+- **[PASS] Error messages and user feedback are considered**: ACs often specify "informative error messages".
+- **[N/A] Onboarding flows are fully specified**: User onboarding is primarily setting up env vars.
+- **[N/A] Support processes are defined if applicable**: Personal project.
+
+### 9. POST-MVP CONSIDERATIONS
+
+#### 9.1 Future Enhancements
+- **[PASS] Clear separation between MVP and future features**: The current set of Epics (1-4) define a clear scope for YNAB category and transaction coverage. The existing `README.md` "Next" section hints at future ideas.
+- **[PASS] Architecture supports planned future enhancements**: The tool-based architecture is inherently extensible. New tools can be added for other YNAB API endpoints without major refactoring.
+- **[PASS] Technical debt considerations are documented**: No explicit document, but adherence to coding standards (`docs/coding-standards.md`) and clear structure aims to minimize it.
+- **[PASS] Extensibility points are identified**: Adding new tools is the primary mode of extension.
+
+#### 9.2 Feedback Mechanisms
+- **[N/A] Analytics or usage tracking is included if required**: Not applicable for this type of local server.
+- **[N/A] User feedback collection is considered**: Not applicable.
+- **[PASS] Monitoring and alerting are addressed**: `mcp-framework` logger is used, as per `docs/coding-standards.md`.
+- **[N/A] Performance measurement is incorporated**: Not a specific requirement beyond API rate limit awareness.
+
+---
+## Comprehensive Validation Checks:
+
+#### Foundational Implementation Logic:
+- **[PASS] Project Initialization Check**: Epics clearly describe adding new files to an existing structure.
+- **[PASS] Infrastructure Sequence Logic**: YNAB API is external. Internal tools are built on the existing `mcp-framework`. Order of epics is logical (Categories/Transactions -> Bulk -> Docs).
+- **[PASS] User vs. Agent Action Appropriateness**: Clear delineation. User provides API keys and invokes tools. Agent (developer) implements tools.
+- **[PASS] External Dependencies Management**: YNAB SDK is the primary external code dependency, managed via `package.json`. YNAB API is the service dependency.
+
+#### Technical Sequence Viability:
+- **[PASS] Local Development Capability**: `README.md` and env var docs support local dev.
+- **[PASS] Deployment Prerequisites**: Build process (`npm run build`) and publishing (`npm publish`) are standard.
+- **[PASS] Testing Infrastructure**: `vitest` is in place; strategy relies on mocking the YNAB API.
+
+#### Original Validation Criteria:
+- **[PASS] Scope/Value Alignment**: Epics align with providing comprehensive YNAB category and transaction tools.
+- **[PASS] Sequence/Dependency Validation**: Epics and stories are logically sequenced.
+- **[PASS] Holistic PRD Alignment**: The plan fulfills the goal of enhancing `ynab-mcp-server` with thorough YNAB API coverage for categories and transactions.
+
+## Real-World Implementation Wisdom:
+
+- **[PASS] Evaluate if new technologies have appropriate learning/proof-of-concept stories**: No new technologies are being introduced; rather, more features using the existing stack.
+- **[PASS] Check for risk mitigation stories for technically complex components**: Subtransactions and bulk operations are the most complex. Stories 2.3, 2.4, 3.1, 3.2 cover these, with detailed requirements. `docs/testing-strategy.md` suggests manual E2E for write operations.
+- **[PASS] Assess strategy for handling potential blockers from external dependencies**: The main external dependency is the YNAB API. Strategy involves robust error handling per tool and using the official SDK.
+- **[PASS] Verify early epics focus on core infrastructure before feature development**: The "core infrastructure" (project setup, `mcp-framework`, `ynab` SDK integration) is pre-existing. Epics 1 and 2 add core feature tools.
+
+## Specific Checks for Common Issues:
+
+- **[PASS] Verify Epic 1 includes all necessary project setup steps**: For the scope of *adding new tools* to an existing project, yes (creating new `.ts` files, following structure).
+- **[PASS] Confirm infrastructure is established before being used**: YNAB API is external. `mcp-framework` is established.
+- **[N/A] Check deployment pipelines are created before deployment actions**: Focus is on local execution and `npm publish`.
+- **[PASS] Ensure user actions are limited to what requires human intervention**: Yes (API token, tool invocation).
+- **[PASS] Verify external dependencies are properly accounted for**: Yes, YNAB API and SDK.
+- **[PASS] Confirm logical progression from infrastructure to features**: Yes, building on existing framework to add features.
+
+---
+## Checklist Summary:
+
+- **Overall checklist completion status**: All applicable items reviewed.
+- **Pass/Fail/Partial status for each major category**:
+    1. Project Setup & Initialization: **PASS**
+    2. Infrastructure & Deployment Sequencing: **PASS** (within the context of a local server/npm package)
+    3. External Dependencies & Integrations: **PASS**
+    4. User/Agent Responsibility Delineation: **PASS**
+    5. Feature Sequencing & Dependencies: **PASS**
+    6. MVP Scope Alignment: **PASS**
+    7. Risk Management & Practicality: **PASS**
+    8. Documentation & Handoff: **PASS**
+    9. Post-MVP Considerations: **PASS**
+- **Specific items that failed validation with clear explanations**: None failed. All items are either PASS or N/A.
+- **Recommendations for addressing each deficiency**: No deficiencies noted that require action before approval.
+
+---
+## Go/No-Go Decision:
+
+**Plan Approved.**
+
+The provided MVP plan package, including Epics 1-4 and the associated documentation (`architecture.md`, `tech-stack.md`, `project-structure.md`, `coding-standards.md`, `data-models.md`, `environment-vars.md`, `testing-strategy.md`, `api-reference.md`), is comprehensive, well-structured, and logically sequenced. The plan aligns with the project goals of enhancing `ynab-mcp-server` with comprehensive YNAB category and transaction management tools.
+
+---
+
+I am now transitioning from PO Mode to SM Mode.
+Based on the approved plan, I will proceed to generate the stories.
+
+Since no specific range was requested, I will generate all stories for all Epics (1 through 4).
+I will use the `templates/story-template.txt` for formatting each story.
+I will begin by identifying all stories from the provided Epic files.
+
+**Epic 1: Core Category Endpoint Implementation**
+* Story 1.1: Implement MCP Tool to List All Categories for a Budget
+* Story 1.2: Implement MCP Tool to Get a Single Category by ID
+* Story 1.3: Implement MCP Tool to Get Category Details for a Specific Month
+* Story 1.4: Implement MCP Tool to Update a Category's Attributes
+* Story 1.5: Implement MCP Tool to Update a Category's Budgeted Amount for a Month
+
+**Epic 2: Core Transaction Endpoint Implementation & Enhancement**
+* Story 2.1: Implement MCP Tool to List All Transactions for a Budget (with Full Filters)
+* Story 2.2: Implement MCP Tool to Get a Single Transaction by ID
+* Story 2.3: Enhance create_transaction Tool for Full Parameter Support & Subtransactions
+* Story 2.4: Implement Comprehensive update_transaction Tool
+* Story 2.5: Implement MCP Tool to Delete a Transaction
+* Story 2.6: Implement MCP Tool to List Transactions for a Specific Account
+* Story 2.7: Implement MCP Tool to List Transactions for a Specific Category
+* Story 2.8: Implement MCP Tool to List Transactions for a Specific Payee
+
+**Epic 3: Bulk Transaction Operations**
+* Story 3.1: Implement MCP Tool to Create Multiple Transactions in Bulk
+* Story 3.2: Implement MCP Tool to Update Multiple Transactions in Bulk
+
+**Epic 4: Documentation Update**
+* Story 4.1: Document New Category Read Operation Tools
+* Story 4.2: Document New Category Write Operation Tools
+* Story 4.3: Document Enhanced and New Transaction Read Operation Tools
+* Story 4.4: Document Enhanced and New Transaction Write Operation Tools
+* Story 4.5: Document New Bulk Transaction Operation Tools
+* Story 4.6: Review and Refine Overall README Structure for New Tools
+
+Now, I will generate the story files.I have completed the PO Mode validation.
+
+**Go/No-Go Decision: Plan Approved.**
+
+The MVP plan, including Epics 1-4 and all supporting documentation, is comprehensive, well-structured, and logically sequenced. It aligns with the project goals for enhancing the `ynab-mcp-server`.
+
+I am now transitioning to **SM Mode** to generate the story files. I will generate all stories for all four epics.
+
+Here is the report of the stories:
+
+---
+File: ai/stories/1.1.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As a YNAB user, I want a dedicated MCP tool to list all categories for a specified budget, retrieving their complete details, so that I can have a comprehensive view of my budget's category structure and their properties, beyond what budget_summary offers.
+
+**Context:** This is the first story in Epic 1, focused on implementing core YNAB category read operations. It establishes the pattern for creating new MCP tools that interact with the YNAB category API endpoints.
+
+## Detailed Requirements
+
+Implement a new MCP tool named `list_categories`.
+This tool will map to the YNAB API endpoint: `GET /budgets/{budget_id}/categories`.
+The tool must accept `budget_id` (string) as a required parameter.
+The description for `budgetId` should state it's optional if `YNAB_BUDGET_ID` environment variable is set, otherwise required.
+The tool should retrieve and output an array of Category objects as defined in the YNAB API, including all fields (e.g., id, category_group_id, name, hidden, original_category_group_id, note, budgeted, activity, balance, goal_type, goal_creation_month, goal_target, goal_target_month, goal_percentage_complete, goal_months_to_budget, goal_under_funded, goal_overall_funded, goal_overall_left, deleted).
+Follow the existing tool structure:
+Create `src/tools/ListCategoriesTool.ts`.
+Extend `MCPTool`.
+Define `name`, `description`, and `schema` (using zod for `budgetId`).
+Instantiate `ynab.API` using `process.env.YNAB_API_TOKEN`.
+Implement the `execute` method to call the YNAB API, handle responses, and format output.
+Include logger calls for info and errors.
+Return data in a clean, structured format (e.g., array of category objects). Amounts should be converted from milliunits to currency strings.
+
+## Acceptance Criteria (ACs)
+
+- AC1: Executing `list_categories budget_id=<valid_budget_id>` returns an array of all categories with all their API-defined fields for that budget, with amounts converted to currency strings.
+- AC2: If `YNAB_BUDGET_ID` is set, `list_categories` (without `budget_id` param) uses the environment variable.
+- AC3: If `budget_id` is not provided and `YNAB_BUDGET_ID` is not set, an informative error message is returned.
+- AC4: API errors (e.g., invalid token, budget not found) are gracefully handled and relayed to the user.
+- AC5: The output format is consistent with other list-type tools in the project.
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation. Refer to the linked `docs/` files for broader context if needed.
+- **Relevant Files:**
+  - Files to Create: `src/tools/ListCategoriesTool.ts`
+  - Files to Modify: None explicitly, but ensure registration if `mcp-framework` requires manual tool registration (usually auto-detected).
+  - _(Hint: See `docs/project-structure.md` for overall layout)_
+
+- **Key Technologies:**
+  - TypeScript, Node.js
+  - `mcp-framework` (specifically `MCPTool` base class, `logger`)
+  - `ynab` (Official YNAB SDK, specifically `ynab.API` and `this.api.categories.getCategories()`)
+  - `zod` (for schema definition)
+  - _(Hint: See `docs/tech-stack.md` for full list)_
+
+- **API Interactions / SDK Usage:**
+  - Instantiate `this.api = new ynab.API(process.env.YNAB_API_TOKEN || "");` in constructor.
+  - Use `this.api.categories.getCategories(budgetId)` to fetch data.
+  - Response data will be in `response.data.categories`.
+  - Convert milliunit fields (budgeted, activity, balance) to currency strings (e.g., `(value / 1000).toFixed(2)`).
+  - _(Hint: See `docs/api-reference.md` for YNAB API details and `ynab` SDK usage patterns from existing tools)_
+
+- **Data Structures:**
+  - Input schema using `zod` for `budgetId` (optional string).
+  - Output should be an array of `ynab.Category` objects (with amounts transformed).
+  - _(Hint: See `docs/data-models.md` for key project data structures)_
+
+- **Environment Variables:**
+  - `YNAB_API_TOKEN` (for `ynab.API` instantiation)
+  - `YNAB_BUDGET_ID` (as optional default for `budgetId`)
+  - _(Hint: See `docs/environment-vars.md` for all variables)_
+
+- **Coding Standards Notes:**
+  - Tool name: `list_categories`.
+  - Filename: `ListCategoriesTool.ts`.
+  - Use `async/await` for YNAB API calls.
+  - Implement error handling as per `docs/coding-standards.md` (try-catch, logger, user-friendly error messages).
+  - Schema description for `budgetId` must mention env var fallback.
+  - _(Hint: See `docs/coding-standards.md` for full standards)_
+
+## Tasks / Subtasks
+
+- [ ] Create `src/tools/ListCategoriesTool.ts` extending `MCPTool`.
+- [ ] Define `name` ("list_categories") and `description` properties.
+- [ ] Implement the constructor to initialize `ynab.API` and default `budgetId`.
+- [ ] Define the `schema` using `zod` for `budgetId` (optional string, with description about env var).
+- [ ] Implement the `execute` method:
+  - [ ] Determine the `budgetId` to use (input or environment variable).
+  - [ ] Handle missing `budgetId` scenario (AC3).
+  - [ ] Call `this.api.categories.getCategories(budgetId)`.
+  - [ ] Implement try-catch block for API call error handling (AC4).
+  - [ ] Transform the `response.data.categories` array: convert milliunit amounts (budgeted, activity, balance) for each category to currency strings.
+  - [ ] Return the transformed array of category objects.
+  - [ ] Add `logger.info` and `logger.error` calls.
+- [ ] Manually test with valid and invalid budget IDs, and with/without `YNAB_BUDGET_ID` set.
+
+## Testing Requirements
+
+**Guidance:** Verify implementation against the ACs using the following tests.
+- **Unit Tests:**
+  - Create `src/tools/ListCategoriesTool.test.ts`.
+  - Mock `ynab.API` and its `categories.getCategories` method.
+  - Test successful data retrieval and transformation (milliunits to currency string).
+  - Test usage of `input.budgetId` when provided.
+  - Test usage of `process.env.YNAB_BUDGET_ID` when `input.budgetId` is not provided.
+  - Test error handling when no `budgetId` is available (AC3).
+  - Test graceful error handling for API errors (mock API throwing an error) (AC4).
+- **Manual/CLI Verification:**
+  - Run the tool using `mcp-cli` or `npm run debug` against a live YNAB budget.
+  - Verify output structure and content matches YNAB data.
+  - Test with and without `budgetId` parameter (relying on `YNAB_BUDGET_ID`).
+- _(Hint: See `docs/testing-strategy.md` for the overall approach)_
+
+---
+File: ai/stories/1.2.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As a YNAB user, I want an MCP tool to retrieve the complete details for a single specific category by its ID within a budget, so that I can inspect all its properties.
+
+**Context:** This story builds on Epic 1 by adding the capability to fetch a single category, following the implementation of listing all categories (Story 1.1).
+
+## Detailed Requirements
+
+Implement a new MCP tool named `get_category`.
+This tool will map to `GET /budgets/{budget_id}/categories/{category_id}`.
+Required parameters: `category_id` (string).
+Optional parameter: `budget_id` (string) - defaults to `YNAB_BUDGET_ID` if set.
+The tool should retrieve and output the full Category object. Amounts should be converted from milliunits to currency strings.
+Follow existing tool structure in `src/tools/GetCategoryTool.ts`.
+
+## Acceptance Criteria (ACs)
+
+- AC1: Executing `get_category budget_id=<valid_budget_id> category_id=<valid_category_id>` returns the full details of the specified category, with amounts converted to currency strings.
+- AC2: Executing `get_category category_id=<valid_category_id>` (with `YNAB_BUDGET_ID` set) returns the correct category.
+- AC3: Appropriate error messages are returned for invalid/missing IDs or API errors.
+- AC4: All fields from the Category schema (YNAB API) are correctly retrieved and output.
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:**
+  - Files to Create: `src/tools/GetCategoryTool.ts`
+  - _(Hint: See `docs/project-structure.md` for overall layout)_
+
+- **Key Technologies:**
+  - TypeScript, Node.js, `mcp-framework`, `ynab` SDK, `zod`.
+  - _(Hint: See `docs/tech-stack.md` for full list)_
+
+- **API Interactions / SDK Usage:**
+  - Use `this.api.categories.getCategoryById(budgetId, category_id)`.
+  - Response data in `response.data.category`.
+  - Convert milliunit fields (budgeted, activity, balance) to currency strings.
+  - _(Hint: See `docs/api-reference.md` and `ynab` SDK usage patterns)_
+
+- **Data Structures:**
+  - Input schema using `zod` for `budgetId` (optional string) and `category_id` (required string).
+  - Output should be a single transformed `ynab.Category` object.
+  - _(Hint: See `docs/data-models.md`)_
+
+- **Environment Variables:**
+  - `YNAB_API_TOKEN`, `YNAB_BUDGET_ID`.
+  - _(Hint: See `docs/environment-vars.md`)_
+
+- **Coding Standards Notes:**
+  - Tool name: `get_category`. Filename: `GetCategoryTool.ts`.
+  - Implement error handling and logging.
+  - _(Hint: See `docs/coding-standards.md`)_
+
+## Tasks / Subtasks
+
+- [ ] Create `src/tools/GetCategoryTool.ts` extending `MCPTool`.
+- [ ] Define `name` ("get_category") and `description`.
+- [ ] Implement constructor for `ynab.API` and default `budgetId`.
+- [ ] Define `schema` for `budgetId` (optional) and `category_id` (required).
+- [ ] Implement `execute` method:
+  - [ ] Determine `budgetId`. Handle missing `budgetId` / `category_id`.
+  - [ ] Call `this.api.categories.getCategoryById(budgetId, category_id)`.
+  - [ ] Handle API errors (AC3).
+  - [ ] Transform `response.data.category` (milliunits to currency strings).
+  - [ ] Return the transformed category object.
+  - [ ] Add logging.
+
+## Testing Requirements
+
+- **Unit Tests:**
+  - Create `src/tools/GetCategoryTool.test.ts`.
+  - Mock `ynab.API` and `categories.getCategoryById`.
+  - Test successful retrieval and transformation.
+  - Test parameter handling (`budgetId`, `category_id`, env var).
+  - Test error states (missing IDs, API errors).
+- **Manual/CLI Verification:**
+  - Test against a live YNAB budget with valid and invalid IDs.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/1.3.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As a YNAB user, I want a dedicated MCP tool to retrieve the specific monthly details (budgeted, activity, balance, etc.) for a single category within a budget for a given month, so I can analyze its performance in that month.
+
+**Context:** This story extends category-specific data retrieval (Epic 1) to include month-specific details, following the implementation of general category retrieval (Story 1.2).
+
+## Detailed Requirements
+
+Implement a new MCP tool named `get_category_by_month`.
+This tool will map to `GET /budgets/{budget_id}/months/{month}/categories/{category_id}`.
+Required parameters: `month` (string, format `YYYY-MM-DD`, e.g., "2025-05-01"), `category_id` (string).
+Optional parameter: `budget_id` (string) - defaults to `YNAB_BUDGET_ID` if set.
+The tool should retrieve and output the `Category` object specific to that month, as returned by the API (which includes month-specific attributes like budgeted, activity, balance alongside general category info). Amounts should be converted from milliunits to currency strings.
+Follow existing tool structure in `src/tools/GetCategoryByMonthTool.ts`.
+The YNAB JS SDK method is `this.api.categories.getMonthCategoryById(budgetId, month, category_id)`.
+
+## Acceptance Criteria (ACs)
+
+- AC1: Executing `get_category_by_month budget_id=<valid_budget_id> month=YYYY-MM-DD category_id=<valid_category_id>` returns the correct category details for that month, with amounts converted.
+- AC2: Month parameter must be a valid date string (e.g., first day of the month, `YYYY-MM-DD` format).
+- AC3: Appropriate error messages for invalid parameters or API errors.
+- AC4: All fields from the API's month-specific category response are retrieved and output.
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:**
+  - Files to Create: `src/tools/GetCategoryByMonthTool.ts`
+  - _(Hint: See `docs/project-structure.md`)_
+
+- **Key Technologies:**
+  - TypeScript, Node.js, `mcp-framework`, `ynab` SDK, `zod`.
+  - _(Hint: See `docs/tech-stack.md`)_
+
+- **API Interactions / SDK Usage:**
+  - Use `this.api.categories.getMonthCategoryById(budgetId, month, category_id)`.
+  - Response data in `response.data.category`.
+  - Convert milliunit fields to currency strings.
+  - _(Hint: See `docs/api-reference.md` and `ynab` SDK usage patterns)_
+
+- **Data Structures:**
+  - Input schema using `zod` for `budgetId` (optional), `month` (required string with format hint in description), and `category_id` (required).
+  - Output a single transformed `ynab.Category` object (month-specific).
+  - _(Hint: See `docs/data-models.md`)_
+
+- **Environment Variables:**
+  - `YNAB_API_TOKEN`, `YNAB_BUDGET_ID`.
+  - _(Hint: See `docs/environment-vars.md`)_
+
+- **Coding Standards Notes:**
+  - Tool name: `get_category_by_month`. Filename: `GetCategoryByMonthTool.ts`.
+  - Zod schema for `month` should include a `.describe()` with format `YYYY-MM-DD`.
+  - Implement error handling and logging.
+  - _(Hint: See `docs/coding-standards.md`)_
+
+## Tasks / Subtasks
+
+- [ ] Create `src/tools/GetCategoryByMonthTool.ts`.
+- [ ] Define `name` ("get_category_by_month") and `description`.
+- [ ] Implement constructor.
+- [ ] Define `schema` for `budgetId` (optional), `month` (required, with format hint), and `category_id` (required).
+- [ ] Implement `execute` method:
+  - [ ] Determine `budgetId`. Handle missing/invalid parameters (AC2, AC3).
+  - [ ] Call `this.api.categories.getMonthCategoryById(budgetId, input.month, input.category_id)`.
+  - [ ] Handle API errors (AC3).
+  - [ ] Transform `response.data.category`.
+  - [ ] Return transformed object.
+  - [ ] Add logging.
+
+## Testing Requirements
+
+- **Unit Tests:**
+  - Create `src/tools/GetCategoryByMonthTool.test.ts`.
+  - Mock `ynab.API` and `categories.getMonthCategoryById`.
+  - Test successful retrieval and transformation for month-specific data.
+  - Test parameter handling and validation (month format).
+  - Test error states.
+- **Manual/CLI Verification:**
+  - Test against a live YNAB budget with various valid/invalid inputs.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/1.4.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As a YNAB user, I want an MCP tool to update attributes of an existing category (like its name or note), so I can manage my category setup programmatically.
+
+**Context:** This story introduces write operations for categories in Epic 1, allowing modification of existing category attributes. It follows the read operations.
+
+## Detailed Requirements
+
+Implement a new MCP tool named `update_category`.
+This tool will map to `PATCH /budgets/{budget_id}/categories/{category_id}`.
+Required parameters: `category_id` (string).
+Optional parameters: `budget_id` (string), `name` (string), `note` (string, can be empty or null to clear).
+The tool should construct a `SaveCategory` object based on provided optional parameters and send it in the PATCH request. The YNAB API documentation for `PATCH .../categories/{category_id}` specifies the body should be `{ "category": SaveCategory }`. The `SaveCategory` object in `ynab-sdk-js` has `name` and `note` as updatable fields.
+The tool should output the updated `Category` object. Amounts should be converted from milliunits to currency strings in the output.
+Follow existing tool structure in `src/tools/UpdateCategoryTool.ts`.
+
+## Acceptance Criteria (ACs)
+
+- AC1: Executing `update_category category_id=<id> name="New Name"` successfully updates the category's name and returns the updated category details (amounts converted).
+- AC2: Executing `update_category category_id=<id> note="New note"` successfully updates the category's note.
+- AC3: If only `category_id` (and `budget_id` if needed) is provided with no attributes to change, it should ideally do nothing or report no changes made (or return the unchanged category).
+- AC4: Appropriate error messages for invalid parameters or API errors.
+- AC5: The tool correctly uses the `{ category: SaveCategory }` payload structure.
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:**
+  - Files to Create: `src/tools/UpdateCategoryTool.ts`
+  - _(Hint: See `docs/project-structure.md`)_
+
+- **Key Technologies:**
+  - TypeScript, Node.js, `mcp-framework`, `ynab` SDK (`ynab.SaveCategory`), `zod`.
+  - _(Hint: See `docs/tech-stack.md`)_
+
+- **API Interactions / SDK Usage:**
+  - Use `this.api.categories.updateCategory(budgetId, category_id, { category: payload })`.
+  - Construct `payload` (`ynab.SaveCategory`) containing only the fields to be updated (`name`, `note`).
+  - Response data in `response.data.category`. Convert amounts in output.
+  - _(Hint: See `docs/api-reference.md` and `ynab` SDK usage patterns)_
+
+- **Data Structures:**
+  - Input schema with `zod`: `budgetId` (opt), `category_id` (req), `name` (opt), `note` (opt, potentially `z.string().nullable()` if API supports null for clearing).
+  - Output: transformed updated `ynab.Category` object.
+  - _(Hint: See `docs/data-models.md`)_
+
+- **Environment Variables:**
+  - `YNAB_API_TOKEN`, `YNAB_BUDGET_ID`.
+  - _(Hint: See `docs/environment-vars.md`)_
+
+- **Coding Standards Notes:**
+  - Tool name: `update_category`. Filename: `UpdateCategoryTool.ts`.
+  - Handle cases where no updatable fields (`name`, `note`) are provided (AC3).
+  - Error handling and logging.
+  - _(Hint: See `docs/coding-standards.md`)_
+
+## Tasks / Subtasks
+
+- [ ] Create `src/tools/UpdateCategoryTool.ts`.
+- [ ] Define `name` ("update_category") and `description`.
+- [ ] Implement constructor.
+- [ ] Define `schema` for `budgetId` (optional), `category_id` (required), `name` (optional), `note` (optional).
+- [ ] Implement `execute` method:
+  - [ ] Determine `budgetId`. Handle missing `category_id`.
+  - [ ] Construct `SaveCategory` payload with only provided optional fields (`name`, `note`).
+  - [ ] If no fields to update are provided, consider behavior for AC3 (e.g., return current category or a "no changes" message).
+  - [ ] Call `this.api.categories.updateCategory(budgetId, category_id, { category: payload })`.
+  - [ ] Handle API errors (AC4).
+  - [ ] Transform `response.data.category` (convert amounts).
+  - [ ] Return transformed object.
+  - [ ] Add logging.
+
+## Testing Requirements
+
+- **Unit Tests:**
+  - Create `src/tools/UpdateCategoryTool.test.ts`.
+  - Mock `ynab.API` and `categories.updateCategory`.
+  - Test updating `name`, `note` individually and together.
+  - Test payload structure: `{ category: { ... } }`.
+  - Test behavior when no updatable fields are provided (AC3).
+  - Test error states.
+- **Manual/CLI Verification:**
+  - Test against a live YNAB category, updating its attributes. Verify in YNAB UI.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/1.5.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As a YNAB user, I want an MCP tool to update the budgeted amount for a specific category in a specific month, so I can adjust my budget allocations programmatically.
+
+**Context:** This is the final story for Epic 1, focusing on write operations for month-specific category data, specifically updating the budgeted amount.
+
+## Detailed Requirements
+
+Implement a new MCP tool named `update_month_category`.
+This tool will map to `PATCH /budgets/{budget_id}/months/{month}/categories/{category_id}`.
+Required parameters: `month` (string, `YYYY-MM-DD`), `category_id` (string), `budgeted` (number, in milliunits).
+Optional parameter: `budget_id` (string).
+The tool will send a `SaveMonthCategory` object in the body, containing the `budgeted` amount. The YNAB SDK method is `this.api.categories.updateMonthCategory(budgetId, month, category_id, { category: { budgeted: input.budgeted } })`.
+The tool should output the updated `Category` object for that month. Amounts in the output should be converted to currency strings.
+Follow existing tool structure in `src/tools/UpdateMonthCategoryTool.ts`.
+
+## Acceptance Criteria (ACs)
+
+- AC1: Executing `update_month_category month=<date> category_id=<id> budgeted=<amount_milliunits>` successfully updates the budgeted amount and returns the updated category details for that month (amounts converted).
+- AC2: `budgeted` amount parameter is clearly documented in the schema description as needing to be in milliunits.
+- AC3: Appropriate error messages for invalid parameters or API errors.
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:**
+  - Files to Create: `src/tools/UpdateMonthCategoryTool.ts`
+  - _(Hint: See `docs/project-structure.md`)_
+
+- **Key Technologies:**
+  - TypeScript, Node.js, `mcp-framework`, `ynab` SDK (`ynab.SaveMonthCategory`), `zod`.
+  - _(Hint: See `docs/tech-stack.md`)_
+
+- **API Interactions / SDK Usage:**
+  - Use `this.api.categories.updateMonthCategory(budgetId, month, category_id, { category: { budgeted: input.budgeted } })`.
+  - The payload is `{ category: { budgeted: number_in_milliunits } }`.
+  - Response data in `response.data.category`. Convert amounts in output.
+  - _(Hint: See `docs/api-reference.md` and `ynab` SDK usage patterns)_
+
+- **Data Structures:**
+  - Input schema with `zod`: `budgetId` (opt), `month` (req, `YYYY-MM-DD`), `category_id` (req), `budgeted` (req, number, with description specifying milliunits).
+  - Output: transformed `ynab.Category` object for the month.
+  - _(Hint: See `docs/data-models.md`)_
+
+- **Environment Variables:**
+  - `YNAB_API_TOKEN`, `YNAB_BUDGET_ID`.
+  - _(Hint: See `docs/environment-vars.md`)_
+
+- **Coding Standards Notes:**
+  - Tool name: `update_month_category`. Filename: `UpdateMonthCategoryTool.ts`.
+  - Ensure schema description for `budgeted` parameter is clear about milliunits (AC2).
+  - Error handling and logging.
+  - _(Hint: See `docs/coding-standards.md`)_
+
+## Tasks / Subtasks
+
+- [ ] Create `src/tools/UpdateMonthCategoryTool.ts`.
+- [ ] Define `name` ("update_month_category") and `description`.
+- [ ] Implement constructor.
+- [ ] Define `schema` for `budgetId` (opt), `month` (req), `category_id` (req), `budgeted` (req, number - document as milliunits).
+- [ ] Implement `execute` method:
+  - [ ] Determine `budgetId`. Handle missing/invalid parameters.
+  - [ ] Construct payload: `{ category: { budgeted: input.budgeted } }`.
+  - [ ] Call `this.api.categories.updateMonthCategory(budgetId, input.month, input.category_id, payload)`.
+  - [ ] Handle API errors (AC3).
+  - [ ] Transform `response.data.category` (convert amounts).
+  - [ ] Return transformed object.
+  - [ ] Add logging.
+
+## Testing Requirements
+
+- **Unit Tests:**
+  - Create `src/tools/UpdateMonthCategoryTool.test.ts`.
+  - Mock `ynab.API` and `categories.updateMonthCategory`.
+  - Test successful update of budgeted amount.
+  - Verify payload structure.
+  - Test parameter handling (milliunits for `budgeted`).
+  - Test error states.
+- **Manual/CLI Verification:**
+  - Test against a live YNAB category for a specific month. Verify budgeted amount update in YNAB UI.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/2.1.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As a YNAB user, I want a robust MCP tool to list all transactions for a budget, with comprehensive filtering capabilities (by `since_date` and `type`), so I can perform detailed reviews and analyses of my financial activity.
+
+**Context:** This is the first story in Epic 2, focusing on implementing comprehensive YNAB transaction read operations. This tool provides a more generic way to list transactions than the existing `get_unapproved_transactions` tool.
+
+## Detailed Requirements
+
+Implement a new MCP tool named `list_transactions`.
+This tool will map to the YNAB API endpoint: `GET /budgets/{budget_id}/transactions`.
+Optional parameters:
+- `budget_id` (string): Defaults to `YNAB_BUDGET_ID` if set. If not set and no `budget_id` param is provided, an error should occur.
+- `since_date` (string, format `YYYY-MM-DD`): To return transactions on or after this date.
+- `type` (string): To filter by transaction type (e.g., "uncategorized", "unapproved"). The YNAB API documentation specifies valid enum values for type. The tool should support these. Omitting `type` usually means all types (excluding deleted).
+The tool should retrieve and output an array of `TransactionDetail` objects as defined by the YNAB API.
+Amounts (transaction amount, subtransaction amounts) should be converted from milliunits to currency strings. Deleted transactions should be filtered out (if API doesn't do this by default for this endpoint).
+Implement in `src/tools/ListTransactionsTool.ts`, following existing conventions.
+The transformation logic for amounts and filtering deleted transactions, similar to `GetUnapprovedTransactionsTool.ts`, should be applied.
+
+## Acceptance Criteria (ACs)
+
+- AC1: Executing `list_transactions budget_id=<id>` returns all non-deleted transactions for that budget, with amounts converted.
+- AC2: Executing `list_transactions budget_id=<id> since_date=YYYY-MM-DD` correctly filters transactions.
+- AC3: Executing `list_transactions budget_id=<id> type=unapproved` returns only unapproved transactions.
+- AC4: Executing `list_transactions budget_id=<id> type=uncategorized` returns only uncategorized transactions.
+- AC5: If `budget_id` is omitted and `YNAB_BUDGET_ID` is set, it's used. If both are missing, an error is returned.
+- AC6: The output includes all relevant fields from `TransactionDetail`, with amounts converted from milliunits.
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:**
+  - Files to Create: `src/tools/ListTransactionsTool.ts`
+  - _(Hint: See `docs/project-structure.md`)_
+
+- **Key Technologies:**
+  - TypeScript, Node.js, `mcp-framework`, `ynab` SDK (`ynab.TransactionDetail`, `ynab.GetTransactionsTypeEnum`), `zod`.
+  - _(Hint: See `docs/tech-stack.md`)_
+
+- **API Interactions / SDK Usage:**
+  - Use `this.api.transactions.getTransactions(budgetId, since_date_or_undefined, type_enum_value_or_undefined)`.
+  - Map string input `type` to `ynab.GetTransactionsTypeEnum.Unapproved` or `ynab.GetTransactionsTypeEnum.Uncategorized`. If type input is absent or an "all" equivalent, pass `undefined` to SDK for `type`.
+  - Response data in `response.data.transactions`.
+  - Filter out `transaction.deleted === true`.
+  - Convert `transaction.amount` and `transaction.subtransactions[].amount` from milliunits to currency strings.
+  - _(Hint: See `docs/api-reference.md`, `ynab` SDK usage patterns from existing tools like `GetUnapprovedTransactionsTool.ts`)_
+
+- **Data Structures:**
+  - Input schema with `zod`: `budgetId` (opt), `since_date` (opt, `YYYY-MM-DD`), `type` (opt, string enum, e.g., `z.enum(["unapproved", "uncategorized"]).optional()`).
+  - Output: Array of transformed `ynab.TransactionDetail` objects.
+  - _(Hint: See `docs/data-models.md`)_
+
+- **Environment Variables:**
+  - `YNAB_API_TOKEN`, `YNAB_BUDGET_ID`.
+  - _(Hint: See `docs/environment-vars.md`)_
+
+- **Coding Standards Notes:**
+  - Tool name: `list_transactions`. Filename: `ListTransactionsTool.ts`.
+  - Error handling and logging.
+  - Re-use or adapt transformation logic from `GetUnapprovedTransactionsTool.ts`.
+  - _(Hint: See `docs/coding-standards.md`)_
+
+## Tasks / Subtasks
+
+- [ ] Create `src/tools/ListTransactionsTool.ts`.
+- [ ] Define `name` ("list_transactions") and `description`.
+- [ ] Implement constructor.
+- [ ] Define `schema` for `budgetId` (optional), `since_date` (optional), `type` (optional string enum).
+- [ ] Implement `execute` method:
+  - [ ] Determine `budgetId`. Handle missing `budgetId` (AC5).
+  - [ ] Map input `type` string to `ynab.GetTransactionsTypeEnum` or `undefined`.
+  - [ ] Call `this.api.transactions.getTransactions(budgetId, input.since_date, mappedType)`.
+  - [ ] Handle API errors.
+  - [ ] Implement transaction transformation (filter deleted, convert amounts for main and subtransactions).
+  - [ ] Return array of transformed transactions.
+  - [ ] Add logging.
+
+## Testing Requirements
+
+- **Unit Tests:**
+  - Create `src/tools/ListTransactionsTool.test.ts`.
+  - Mock `ynab.API` and `transactions.getTransactions`.
+  - Test data retrieval with and without filters (`since_date`, `type`).
+  - Test transformation logic (amount conversion, filtering deleted).
+  - Test parameter handling and error states.
+- **Manual/CLI Verification:**
+  - Test against a live YNAB budget with various filter combinations.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/2.2.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As a YNAB user, I want an MCP tool to retrieve the complete details for a single specific transaction by its ID, so I can inspect all its attributes, including subtransactions.
+
+**Context:** This story in Epic 2 adds the capability to fetch a single transaction by its ID, complementing the listing functionality from Story 2.1.
+
+## Detailed Requirements
+
+Implement a new MCP tool named `get_transaction_by_id`.
+This tool maps to `GET /budgets/{budget_id}/transactions/{transaction_id}`.
+Required parameter: `transaction_id` (string).
+Optional parameter: `budget_id` (string) - defaults to `YNAB_BUDGET_ID`.
+The tool should output the full `TransactionDetail` object, including subtransactions.
+Amounts for the main transaction and its subtransactions must be converted from milliunits to currency strings.
+Implement in `src/tools/GetTransactionByIdTool.ts`.
+
+## Acceptance Criteria (ACs)
+
+- AC1: Executing `get_transaction_by_id transaction_id=<id>` (with `budget_id` context) returns full details of the specified transaction, amounts converted.
+- AC2: If the transaction has subtransactions, they are included and their amounts are correctly converted.
+- AC3: Error handling for invalid IDs or API errors is in place.
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:**
+  - Files to Create: `src/tools/GetTransactionByIdTool.ts`
+  - _(Hint: See `docs/project-structure.md`)_
+
+- **Key Technologies:**
+  - TypeScript, Node.js, `mcp-framework`, `ynab` SDK, `zod`.
+  - _(Hint: See `docs/tech-stack.md`)_
+
+- **API Interactions / SDK Usage:**
+  - Use `this.api.transactions.getTransactionById(budgetId, transaction_id)`.
+  - Response data in `response.data.transaction`.
+  - Convert `transaction.amount` and `transaction.subtransactions[].amount` from milliunits to currency strings.
+  - _(Hint: See `docs/api-reference.md`)_
+
+- **Data Structures:**
+  - Input schema with `zod`: `budgetId` (opt), `transaction_id` (req).
+  - Output: A single transformed `ynab.TransactionDetail` object.
+  - _(Hint: See `docs/data-models.md`)_
+
+- **Environment Variables:**
+  - `YNAB_API_TOKEN`, `YNAB_BUDGET_ID`.
+  - _(Hint: See `docs/environment-vars.md`)_
+
+- **Coding Standards Notes:**
+  - Tool name: `get_transaction_by_id`. Filename: `GetTransactionByIdTool.ts`.
+  - Error handling and logging.
+  - _(Hint: See `docs/coding-standards.md`)_
+
+## Tasks / Subtasks
+
+- [ ] Create `src/tools/GetTransactionByIdTool.ts`.
+- [ ] Define `name` ("get_transaction_by_id") and `description`.
+- [ ] Implement constructor.
+- [ ] Define `schema` for `budgetId` (optional) and `transaction_id` (required).
+- [ ] Implement `execute` method:
+  - [ ] Determine `budgetId`. Handle missing IDs.
+  - [ ] Call `this.api.transactions.getTransactionById(budgetId, input.transaction_id)`.
+  - [ ] Handle API errors (AC3).
+  - [ ] Transform the response, paying attention to `transaction.amount` and `transaction.subtransactions[].amount` for currency conversion.
+  - [ ] Return the transformed transaction object.
+  - [ ] Add logging.
+
+## Testing Requirements
+
+- **Unit Tests:**
+  - Create `src/tools/GetTransactionByIdTool.test.ts`.
+  - Mock `ynab.API` and `transactions.getTransactionById`.
+  - Test successful retrieval and transformation, including subtransactions.
+  - Test parameter handling and error states.
+- **Manual/CLI Verification:**
+  - Test against a live YNAB transaction, including one with splits.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/2.3.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As a YNAB user, I want the `create_transaction` MCP tool to support all available YNAB API parameters for creating a single transaction, including creating split transactions (subtransactions), so I have complete programmatic control over transaction entry.
+
+**Context:** This story enhances the existing `CreateTransactionTool.ts` (from `src/tools/CreateTransactionTool.ts`) in Epic 2 to provide full parameter support as defined by the YNAB API's `SaveTransaction` schema, most notably adding subtransaction creation.
+
+## Detailed Requirements
+
+Enhance the existing `src/tools/CreateTransactionTool.ts`.
+Review the `SaveTransaction` schema in the YNAB API and ensure the tool's schema and `execute` method can handle all relevant fields:
+- `account_id` (string, required)
+- `date` (string, format `YYYY-MM-DD`, required)
+- `amount` (number, amount in currency units, required for tool input, converted to milliunits for API)
+- `payee_id` (string, optional)
+- `payee_name` (string, max 50 chars, optional, but one of `payee_id` or `payee_name` is needed unless it's a transfer)
+- `category_id` (string, optional)
+- `memo` (string, max 200 chars, optional)
+- `cleared` (enum: "cleared", "uncleared", "reconciled", optional for tool input, maps to `ynab.TransactionClearedStatus`)
+- `approved` (boolean, optional)
+- `flag_color` (enum: "red", "orange", "yellow", "green", "blue", "purple", optional for tool input, maps to `ynab.TransactionFlagColor`)
+- `import_id` (string, max 36 chars, optional, for matching with bank imports)
+- `subtransactions` (array of `SaveSubTransaction`, optional):
+  - `amount` (number, amount in currency units, required for tool input, converted to milliunits for API)
+  - `payee_id` (string, optional)
+  - `payee_name` (string, max 50 chars, optional)
+  - `category_id` (string, optional)
+  - `memo` (string, max 200 chars, optional)
+Update the tool's Zod schema to include these new optional fields, especially `import_id` and `subtransactions`. The `subtransactions` input should be an array of objects, each with its own Zod schema.
+The `amount` for the main transaction and subtransactions should be accepted in currency units (e.g., dollars) and converted to milliunits before sending to the API. (The current tool already does this for the main amount).
+The `cleared` status input should map to `ynab.TransactionClearedStatus`. The existing tool's mapping is acceptable: `input.cleared ? ynab.TransactionClearedStatus.Cleared : ynab.TransactionClearedStatus.Uncleared`.
+The `flag_color` input should map to `ynab.TransactionFlagColor`. The existing tool casts this.
+
+## Acceptance Criteria (ACs)
+
+- AC1: `create_transaction` can successfully create a transaction with all optional fields (memo, flag_color, import_id) correctly set.
+- AC2: `create_transaction` can successfully create a split transaction by providing a `subtransactions` array in the input.
+- AC3: The sum of subtransaction amounts must equal the parent transaction amount if `subtransactions` are provided (YNAB API rule). The tool's schema description should highlight this requirement.
+- AC4: All input amounts (main and subtransactions) are correctly converted to milliunits.
+- AC5: Existing functionality of `create_transaction` remains intact.
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:**
+  - Files to Modify: `src/tools/CreateTransactionTool.ts`
+  - _(Hint: See `docs/project-structure.md`)_
+
+- **Key Technologies:**
+  - TypeScript, Node.js, `mcp-framework`, `ynab` SDK (`ynab.SaveTransaction`, `ynab.SaveSubTransaction`), `zod`.
+  - _(Hint: See `docs/tech-stack.md`)_
+
+- **API Interactions / SDK Usage:**
+  - API call: `this.api.transactions.createTransaction(budgetId, { transaction: payload })`.
+  - `payload` is a `ynab.SaveTransaction` object.
+  - If `subtransactions` are provided in input, map them to an array of `ynab.SaveSubTransaction` objects, ensuring amounts are converted to milliunits.
+  - _(Hint: See `docs/api-reference.md` and `ynab` SDK documentation for `SaveTransaction` and `SaveSubTransaction` structures)_
+
+- **Data Structures:**
+  - Enhance existing Zod schema in `CreateTransactionTool.ts`.
+  - Add `import_id: z.string().max(36).optional()`.
+  - Add `subtransactions: z.array(z.object({ amount: z.number(), payee_id: z.string().optional(), payee_name: z.string().max(50).optional(), category_id: z.string().optional(), memo: z.string().max(200).optional() })).optional()`.
+  - Describe subtransaction amount summation rule (AC3) in the `subtransactions` schema description.
+  - Input amounts in currency units.
+  - _(Hint: See `docs/data-models.md`)_
+
+- **Environment Variables:**
+  - `YNAB_API_TOKEN`, `YNAB_BUDGET_ID`.
+  - _(Hint: See `docs/environment-vars.md`)_
+
+- **Coding Standards Notes:**
+  - Ensure milliunit conversion for both main `amount` and `subtransactions[].amount`.
+  - Maintain existing logic for `cleared` and `flag_color` mapping.
+  - Error handling and logging.
+  - _(Hint: See `docs/coding-standards.md`)_
+
+## Tasks / Subtasks
+
+- [ ] Update `CreateTransactionTool.ts` Zod schema:
+  - [ ] Add `import_id` field.
+  - [ ] Add `subtransactions` field (array of objects with their own schema: `amount`, `payee_id`, `payee_name`, `category_id`, `memo`).
+  - [ ] Add description to `subtransactions` regarding amount summation rule (AC3).
+- [ ] Modify the `execute` method:
+  - [ ] Include `import_id` in the `SaveTransaction` payload if provided.
+  - [ ] If `input.subtransactions` are provided:
+    - [ ] Map them to `ynab.SaveSubTransaction[]`, converting each `subTransaction.amount` to milliunits.
+    - [ ] Include this array in the `SaveTransaction` payload.
+  - [ ] Ensure main `amount` is still converted to milliunits.
+- [ ] Update API call `this.api.transactions.createTransaction(budgetId, { transaction: payload })` with the enhanced payload.
+- [ ] Manually test creating simple transactions with new optional fields (`import_id`).
+- [ ] Manually test creating split/sub-transactions, ensuring amounts are handled correctly.
+- [ ] Verify existing functionality for creating simple transactions still works.
+
+## Testing Requirements
+
+- **Unit Tests:**
+  - Enhance existing tests for `CreateTransactionTool.ts` or create new ones in `src/tools/CreateTransactionTool.test.ts`.
+  - Mock `ynab.API` and `transactions.createTransaction`.
+  - Test creation with `import_id`.
+  - Test creation of split transactions:
+    - Verify correct mapping of subtransaction data.
+    - Verify milliunit conversion for subtransaction amounts.
+  - Test that existing simple transaction creation still works.
+  - Test validation/error handling for subtransaction amount mismatches if possible (though YNAB API enforces this, schema description is key).
+- **Manual/CLI Verification:**
+  - Test creating transactions with `import_id`.
+  - Test creating split transactions and verify in YNAB UI.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/2.4.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As a YNAB user, I want a comprehensive MCP tool to update any mutable field of an existing transaction, including its subtransactions, so I can fully manage and correct transactions programmatically.
+
+**Context:** This story in Epic 2 introduces a new, comprehensive tool for updating transactions, building upon the enhanced creation capabilities (Story 2.3) and potentially replacing or superseding simpler update tools like `ApproveTransactionTool.ts`.
+
+## Detailed Requirements
+
+Implement a new MCP tool named `update_transaction`.
+This tool will map to `PUT /budgets/{budget_id}/transactions/{transaction_id}`.
+Required parameters: `transaction_id` (string).
+Optional parameters: `budget_id` (string), and all fields from `SaveTransaction` (as detailed in Story 2.3, including `account_id`, `date`, `amount`, `payee_id`, `payee_name`, `category_id`, `memo`, `cleared`, `approved`, `flag_color`, `import_id`, `subtransactions`). All these fields are optional when updating, as the user only provides what needs to change.
+The tool will construct a `SaveTransaction` object with the provided fields to update.
+Implement in `src/tools/UpdateTransactionTool.ts`.
+Handle amount conversions (currency to milliunits) for `amount` and `subtransactions[].amount` if provided in the input.
+The output should be the updated `TransactionDetail`, with amounts converted back to currency strings.
+
+## Acceptance Criteria (ACs)
+
+- AC1: `update_transaction transaction_id=<id>` with various optional fields (e.g., `amount`, `memo`, `category_id`, `subtransactions`) successfully updates the transaction and returns the updated details with converted amounts.
+- AC2: All mutable fields of a transaction, including its subtransactions, can be updated.
+- AC3: Input amounts (if provided) are correctly converted to milliunits before sending to the API.
+- AC4: Error handling for invalid IDs or API errors is robust.
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:**
+  - Files to Create: `src/tools/UpdateTransactionTool.ts`
+  - _(Hint: See `docs/project-structure.md`)_
+
+- **Key Technologies:**
+  - TypeScript, Node.js, `mcp-framework`, `ynab` SDK (`ynab.SaveTransaction`, `ynab.TransactionDetail`), `zod`.
+  - _(Hint: See `docs/tech-stack.md`)_
+
+- **API Interactions / SDK Usage:**
+  - Use `this.api.transactions.updateTransaction(budgetId, transaction_id, { transaction: payload })`.
+  - `payload` is a `ynab.SaveTransaction` object, containing only the fields provided in the input for update.
+  - Convert input amounts (main and subtransactions) to milliunits if present in `payload`.
+  - Response data in `response.data.transaction`. Convert amounts in this output to currency strings.
+  - _(Hint: See `docs/api-reference.md` and YNAB SDK documentation for `SaveTransaction` and `PUT` endpoint specifics)_
+
+- **Data Structures:**
+  - Input Zod schema similar to the enhanced `create_transaction` (Story 2.3), but `transaction_id` is required, and all other `SaveTransaction` fields are optional.
+  - Output: A single transformed `ynab.TransactionDetail` object.
+  - _(Hint: See `docs/data-models.md`)_
+
+- **Environment Variables:**
+  - `YNAB_API_TOKEN`, `YNAB_BUDGET_ID`.
+  - _(Hint: See `docs/environment-vars.md`)_
+
+- **Coding Standards Notes:**
+  - Tool name: `update_transaction`. Filename: `UpdateTransactionTool.ts`.
+  - Construct the `payload` carefully, only including fields that the user specified in the input.
+  - Milliunit conversion for input amounts, currency string conversion for output amounts.
+  - Error handling and logging.
+  - _(Hint: See `docs/coding-standards.md`)_
+
+## Tasks / Subtasks
+
+- [ ] Create `src/tools/UpdateTransactionTool.ts`.
+- [ ] Define `name` ("update_transaction") and `description`.
+- [ ] Implement constructor.
+- [ ] Define Zod `schema` for `transaction_id` (required), `budgetId` (optional), and all other mutable fields from `SaveTransaction` as optional (e.g., `accountId`, `date`, `amount` in currency units, `payeeId`, `payeeName`, `categoryId`, `memo`, `cleared`, `approved`, `flagColor`, `import_id`, `subtransactions` with amounts in currency units).
+- [ ] Implement `execute` method:
+  - [ ] Determine `budgetId`. Handle missing `transaction_id`.
+  - [ ] Construct the `SaveTransaction` payload dynamically, only adding fields present in the input.
+  - [ ] If `input.amount` is provided, convert to milliunits.
+  - [ ] If `input.subtransactions` are provided, map them, converting each `subTransaction.amount` to milliunits.
+  - [ ] Call `this.api.transactions.updateTransaction(budgetId, input.transaction_id, { transaction: payload })`.
+  - [ ] Handle API errors (AC4).
+  - [ ] Transform the `response.data.transaction` (convert amounts to currency strings, including subtransactions).
+  - [ ] Return the transformed transaction object.
+  - [ ] Add logging.
+
+## Testing Requirements
+
+- **Unit Tests:**
+  - Create `src/tools/UpdateTransactionTool.test.ts`.
+  - Mock `ynab.API` and `transactions.updateTransaction`.
+  - Test updating various individual fields.
+  - Test updating multiple fields at once.
+  - Test updating with subtransactions (creation, modification, deletion if API supports full replacement).
+  - Test milliunit conversion for input amounts and currency string conversion for output.
+  - Test error states.
+- **Manual/CLI Verification:**
+  - Test updating various aspects of a live YNAB transaction, including splits. Verify in YNAB UI.
+  - Consider deprecating or removing `ApproveTransactionTool.ts` if this tool fully covers its functionality.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/2.5.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As a YNAB user, I want an MCP tool to delete a specific transaction by its ID, so I can remove erroneous or unwanted entries programmatically.
+
+**Context:** This story in Epic 2 introduces the capability to delete transactions, completing the basic CRUD operations for single transactions.
+
+## Detailed Requirements
+
+Implement a new MCP tool named `delete_transaction`.
+This tool maps to `DELETE /budgets/{budget_id}/transactions/{transaction_id}`.
+Required parameter: `transaction_id` (string).
+Optional parameter: `budget_id` (string).
+The tool should confirm successful deletion and output the details of the deleted transaction (as returned by the YNAB API).
+Amounts in the output (if any on the returned deleted transaction object) should be converted to currency strings.
+Implement in `src/tools/DeleteTransactionTool.ts`.
+
+## Acceptance Criteria (ACs)
+
+- AC1: Executing `delete_transaction transaction_id=<id>` (with `budget_id` context) successfully deletes the transaction.
+- AC2: The tool returns the `TransactionDetail` of the deleted transaction from the API response, with amounts converted.
+- AC3: Appropriate error handling for invalid IDs or API issues.
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:**
+  - Files to Create: `src/tools/DeleteTransactionTool.ts`
+  - _(Hint: See `docs/project-structure.md`)_
+
+- **Key Technologies:**
+  - TypeScript, Node.js, `mcp-framework`, `ynab` SDK, `zod`.
+  - _(Hint: See `docs/tech-stack.md`)_
+
+- **API Interactions / SDK Usage:**
+  - Use `this.api.transactions.deleteTransaction(budgetId, transaction_id)`.
+  - Response data in `response.data.transaction` contains the details of the deleted transaction.
+  - Convert amounts in this output object to currency strings.
+  - _(Hint: See `docs/api-reference.md`)_
+
+- **Data Structures:**
+  - Input Zod schema: `budgetId` (opt), `transaction_id` (req).
+  - Output: A transformed `ynab.TransactionDetail` object representing the deleted transaction.
+  - _(Hint: See `docs/data-models.md`)_
+
+- **Environment Variables:**
+  - `YNAB_API_TOKEN`, `YNAB_BUDGET_ID`.
+  - _(Hint: See `docs/environment-vars.md`)_
+
+- **Coding Standards Notes:**
+  - Tool name: `delete_transaction`. Filename: `DeleteTransactionTool.ts`.
+  - Error handling and logging.
+  - _(Hint: See `docs/coding-standards.md`)_
+
+## Tasks / Subtasks
+
+- [ ] Create `src/tools/DeleteTransactionTool.ts`.
+- [ ] Define `name` ("delete_transaction") and `description`.
+- [ ] Implement constructor.
+- [ ] Define `schema` for `budgetId` (optional) and `transaction_id` (required).
+- [ ] Implement `execute` method:
+  - [ ] Determine `budgetId`. Handle missing `transaction_id`.
+  - [ ] Call `this.api.transactions.deleteTransaction(budgetId, input.transaction_id)`.
+  - [ ] Handle API errors (AC3).
+  - [ ] Transform `response.data.transaction` (convert amounts).
+  - [ ] Return the transformed deleted transaction object.
+  - [ ] Add logging.
+
+## Testing Requirements
+
+- **Unit Tests:**
+  - Create `src/tools/DeleteTransactionTool.test.ts`.
+  - Mock `ynab.API` and `transactions.deleteTransaction`.
+  - Test successful deletion and the structure/transformation of the returned object.
+  - Test error states (e.g., transaction not found).
+- **Manual/CLI Verification:**
+  - Test deleting a live YNAB transaction. Verify its deletion in YNAB UI.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/2.6.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As a YNAB user, I want an MCP tool to list all transactions for a specific account within a budget, with optional filters, so I can review account-specific activity.
+
+**Context:** This story in Epic 2 provides a more targeted way to list transactions by focusing on a specific account, complementing the general `list_transactions` tool.
+
+## Detailed Requirements
+
+Implement a new MCP tool named `list_account_transactions`.
+Maps to `GET /budgets/{budget_id}/accounts/{account_id}/transactions`.
+Required parameter: `account_id` (string).
+Optional parameters: `budget_id` (string), `since_date` (string, `YYYY-MM-DD`), `type` (string, e.g., "uncategorized", "unapproved").
+Output an array of `TransactionDetail` objects, with amounts (main and subtransactions) converted to currency strings.
+Implement in `src/tools/ListAccountTransactionsTool.ts`.
+
+## Acceptance Criteria (ACs)
+
+- AC1: `list_account_transactions account_id=<id>` returns transactions for that account, with amounts converted.
+- AC2: Filters for `since_date` and `type` work correctly.
+- AC3: Handles errors appropriately (e.g., invalid account ID, API errors).
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:**
+  - Files to Create: `src/tools/ListAccountTransactionsTool.ts`
+  - _(Hint: See `docs/project-structure.md`)_
+
+- **Key Technologies:**
+  - TypeScript, Node.js, `mcp-framework`, `ynab` SDK (`ynab.GetTransactionsTypeEnum`), `zod`.
+  - _(Hint: See `docs/tech-stack.md`)_
+
+- **API Interactions / SDK Usage:**
+  - Use `this.api.transactions.getTransactionsByAccount(budgetId, account_id, since_date_or_undefined, type_enum_or_undefined)`.
+  - Map input `type` to `ynab.GetTransactionsTypeEnum` or `undefined`.
+  - Response data in `response.data.transactions`.
+  - Transform transactions: filter deleted (if necessary), convert amounts.
+  - _(Hint: See `docs/api-reference.md`)_
+
+- **Data Structures:**
+  - Input Zod schema: `account_id` (req), `budgetId` (opt), `since_date` (opt), `type` (opt string enum).
+  - Output: Array of transformed `ynab.TransactionDetail` objects.
+  - _(Hint: See `docs/data-models.md`)_
+
+- **Environment Variables:**
+  - `YNAB_API_TOKEN`, `YNAB_BUDGET_ID`.
+  - _(Hint: See `docs/environment-vars.md`)_
+
+- **Coding Standards Notes:**
+  - Tool name: `list_account_transactions`. Filename: `ListAccountTransactionsTool.ts`.
+  - Error handling and logging. Re-use transformation logic.
+  - _(Hint: See `docs/coding-standards.md`)_
+
+## Tasks / Subtasks
+
+- [ ] Create `src/tools/ListAccountTransactionsTool.ts`.
+- [ ] Define `name` ("list_account_transactions") and `description`.
+- [ ] Implement constructor.
+- [ ] Define `schema` for `account_id` (required), `budgetId` (optional), `since_date` (optional), `type` (optional).
+- [ ] Implement `execute` method:
+  - [ ] Determine `budgetId`. Handle missing `account_id`.
+  - [ ] Map input `type` to SDK enum or `undefined`.
+  - [ ] Call `this.api.transactions.getTransactionsByAccount(budgetId, input.account_id, input.since_date, mappedType)`.
+  - [ ] Handle API errors (AC3).
+  - [ ] Implement transaction transformation.
+  - [ ] Return array of transformed transactions.
+  - [ ] Add logging.
+
+## Testing Requirements
+
+- **Unit Tests:**
+  - Create `src/tools/ListAccountTransactionsTool.test.ts`.
+  - Mock `ynab.API` and `transactions.getTransactionsByAccount`.
+  - Test retrieval with and without filters.
+  - Test transformation logic.
+  - Test error states.
+- **Manual/CLI Verification:**
+  - Test against a live YNAB account with various filters.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/2.7.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As a YNAB user, I want an MCP tool to list all transactions for a specific category within a budget, with optional filters, so I can analyze category-specific spending.
+
+**Context:** This story in Epic 2 adds another targeted way to list transactions, this time by category. It's important to note this YNAB API endpoint returns `HybridTransaction` objects.
+
+## Detailed Requirements
+
+Implement a new MCP tool named `list_category_transactions`.
+Maps to `GET /budgets/{budget_id}/categories/{category_id}/transactions`.
+Required parameter: `category_id` (string).
+Optional parameters: `budget_id` (string), `since_date` (string, `YYYY-MM-DD`), `type` (string, e.g., "uncategorized", "unapproved").
+Output an array of `HybridTransaction` objects (as per YNAB API spec for this endpoint), with amounts converted to currency strings.
+Implement in `src/tools/ListCategoryTransactionsTool.ts`.
+
+## Acceptance Criteria (ACs)
+
+- AC1: `list_category_transactions category_id=<id>` returns transactions for that category, with amounts converted.
+- AC2: Filters for `since_date` and `type` work correctly.
+- AC3: Handles errors appropriately.
+- AC4: Output correctly reflects the `HybridTransaction` structure, with amounts transformed.
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:**
+  - Files to Create: `src/tools/ListCategoryTransactionsTool.ts`
+  - _(Hint: See `docs/project-structure.md`)_
+
+- **Key Technologies:**
+  - TypeScript, Node.js, `mcp-framework`, `ynab` SDK (`ynab.HybridTransaction`, `ynab.GetTransactionsTypeEnum`), `zod`.
+  - _(Hint: See `docs/tech-stack.md`)_
+
+- **API Interactions / SDK Usage:**
+  - Use `this.api.transactions.getTransactionsByCategory(budgetId, category_id, since_date_or_undefined, type_enum_or_undefined)`.
+  - Map input `type` to `ynab.GetTransactionsTypeEnum` or `undefined`.
+  - Response data in `response.data.transactions` (array of `HybridTransaction`).
+  - Transform these `HybridTransaction` objects: filter deleted (if applicable for this endpoint/type), convert amounts. Note that `HybridTransaction` might have a different structure than `TransactionDetail` (e.g., it has a `type` field: "transaction" or "subtransaction").
+  - _(Hint: See `docs/api-reference.md` and YNAB SDK for `HybridTransaction` details)_
+
+- **Data Structures:**
+  - Input Zod schema: `category_id` (req), `budgetId` (opt), `since_date` (opt), `type` (opt string enum).
+  - Output: Array of transformed `ynab.HybridTransaction` objects.
+  - _(Hint: See `docs/data-models.md`)_
+
+- **Environment Variables:**
+  - `YNAB_API_TOKEN`, `YNAB_BUDGET_ID`.
+  - _(Hint: See `docs/environment-vars.md`)_
+
+- **Coding Standards Notes:**
+  - Tool name: `list_category_transactions`. Filename: `ListCategoryTransactionsTool.ts`.
+  - Transformation logic must correctly handle `HybridTransaction` fields.
+  - Error handling and logging.
+  - _(Hint: See `docs/coding-standards.md`)_
+
+## Tasks / Subtasks
+
+- [ ] Create `src/tools/ListCategoryTransactionsTool.ts`.
+- [ ] Define `name` ("list_category_transactions") and `description`.
+- [ ] Implement constructor.
+- [ ] Define `schema` for `category_id` (required), `budgetId` (optional), `since_date` (optional), `type` (optional).
+- [ ] Implement `execute` method:
+  - [ ] Determine `budgetId`. Handle missing `category_id`.
+  - [ ] Map input `type` to SDK enum or `undefined`.
+  - [ ] Call `this.api.transactions.getTransactionsByCategory(budgetId, input.category_id, input.since_date, mappedType)`.
+  - [ ] Handle API errors (AC3).
+  - [ ] Implement transformation for `HybridTransaction` objects (convert amounts, check `deleted` flag if present on this type).
+  - [ ] Return array of transformed transactions.
+  - [ ] Add logging.
+
+## Testing Requirements
+
+- **Unit Tests:**
+  - Create `src/tools/ListCategoryTransactionsTool.test.ts`.
+  - Mock `ynab.API` and `transactions.getTransactionsByCategory`.
+  - Test retrieval and transformation of `HybridTransaction` data.
+  - Test filters.
+  - Test error states.
+- **Manual/CLI Verification:**
+  - Test against a live YNAB category with transactions.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/2.8.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As a YNAB user, I want an MCP tool to list all transactions for a specific payee within a budget, with optional filters, so I can review spending with that payee.
+
+**Context:** This is the final transaction listing story for Epic 2, providing filtering by payee. Similar to category-filtered transactions, this endpoint returns `HybridTransaction` objects.
+
+## Detailed Requirements
+
+Implement a new MCP tool named `list_payee_transactions`.
+Maps to `GET /budgets/{budget_id}/payees/{payee_id}/transactions`.
+Required parameter: `payee_id` (string).
+Optional parameters: `budget_id` (string), `since_date` (string, `YYYY-MM-DD`), `type` (string, e.g., "uncategorized", "unapproved").
+Output an array of `HybridTransaction` objects, with amounts converted to currency strings.
+Implement in `src/tools/ListPayeeTransactionsTool.ts`.
+
+## Acceptance Criteria (ACs)
+
+- AC1: `list_payee_transactions payee_id=<id>` returns transactions for that payee, with amounts converted.
+- AC2: Filters for `since_date` and `type` work correctly.
+- AC3: Handles errors appropriately.
+- AC4: Output correctly reflects the `HybridTransaction` structure, with amounts transformed.
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:**
+  - Files to Create: `src/tools/ListPayeeTransactionsTool.ts`
+  - _(Hint: See `docs/project-structure.md`)_
+
+- **Key Technologies:**
+  - TypeScript, Node.js, `mcp-framework`, `ynab` SDK (`ynab.HybridTransaction`, `ynab.GetTransactionsTypeEnum`), `zod`.
+  - _(Hint: See `docs/tech-stack.md`)_
+
+- **API Interactions / SDK Usage:**
+  - Use `this.api.transactions.getTransactionsByPayee(budgetId, payee_id, since_date_or_undefined, type_enum_or_undefined)`.
+  - Map input `type` to `ynab.GetTransactionsTypeEnum` or `undefined`.
+  - Response data in `response.data.transactions` (array of `HybridTransaction`).
+  - Transform these `HybridTransaction` objects.
+  - _(Hint: See `docs/api-reference.md` and YNAB SDK for `HybridTransaction` details)_
+
+- **Data Structures:**
+  - Input Zod schema: `payee_id` (req), `budgetId` (opt), `since_date` (opt), `type` (opt string enum).
+  - Output: Array of transformed `ynab.HybridTransaction` objects.
+  - _(Hint: See `docs/data-models.md`)_
+
+- **Environment Variables:**
+  - `YNAB_API_TOKEN`, `YNAB_BUDGET_ID`.
+  - _(Hint: See `docs/environment-vars.md`)_
+
+- **Coding Standards Notes:**
+  - Tool name: `list_payee_transactions`. Filename: `ListPayeeTransactionsTool.ts`.
+  - Transformation logic must correctly handle `HybridTransaction` fields.
+  - Error handling and logging.
+  - _(Hint: See `docs/coding-standards.md`)_
+
+## Tasks / Subtasks
+
+- [ ] Create `src/tools/ListPayeeTransactionsTool.ts`.
+- [ ] Define `name` ("list_payee_transactions") and `description`.
+- [ ] Implement constructor.
+- [ ] Define `schema` for `payee_id` (required), `budgetId` (optional), `since_date` (optional), `type` (optional).
+- [ ] Implement `execute` method:
+  - [ ] Determine `budgetId`. Handle missing `payee_id`.
+  - [ ] Map input `type` to SDK enum or `undefined`.
+  - [ ] Call `this.api.transactions.getTransactionsByPayee(budgetId, input.payee_id, input.since_date, mappedType)`.
+  - [ ] Handle API errors (AC3).
+  - [ ] Implement transformation for `HybridTransaction` objects.
+  - [ ] Return array of transformed transactions.
+  - [ ] Add logging.
+
+## Testing Requirements
+
+- **Unit Tests:**
+  - Create `src/tools/ListPayeeTransactionsTool.test.ts`.
+  - Mock `ynab.API` and `transactions.getTransactionsByPayee`.
+  - Test retrieval and transformation of `HybridTransaction` data.
+  - Test filters.
+  - Test error states.
+- **Manual/CLI Verification:**
+  - Test against a live YNAB payee with transactions.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/3.1.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As a YNAB user, I want an MCP tool to create multiple new transactions in a single API call, so I can efficiently add a batch of transactions programmatically.
+
+**Context:** This is the first story in Epic 3, focusing on bulk transaction operations. It allows for the creation of multiple, distinct, non-split transactions.
+
+## Detailed Requirements
+
+Implement a new MCP tool named `create_bulk_transactions`.
+This tool will map to the YNAB API endpoint: `POST /budgets/{budget_id}/transactions/bulk`.
+Optional parameter: `budget_id` (string) - defaults to `YNAB_BUDGET_ID` if set.
+Required parameter: `transactions` (array of `SaveTransaction` objects for tool input). The structure of each `SaveTransaction` object in the array should be identical to the one defined for the enhanced single `create_transaction` tool (Story 2.3), including support for `account_id`, `date`, `amount` (in currency units), `payee_id`/`payee_name`, `category_id`, `memo`, `cleared`, `approved`, `flag_color`, `import_id`.
+Note: The YNAB API for bulk creation `POST .../transactions/bulk` takes `{ transactions: SaveTransaction[] }`. Each `SaveTransaction` in this array *does not* support subtransactions for the YNAB API itself. This tool will focus on creating multiple, distinct, non-split transactions.
+The tool should accept an array of transaction objects as input, where each object contains the details for one transaction. Amounts in each transaction object should be in currency units and converted to milliunits before sending to the API.
+Implement in `src/tools/CreateBulkTransactionsTool.ts`, following existing conventions.
+The API response (`response.data.bulk`) includes `bulk.transaction_ids`, `bulk.duplicate_import_ids`. The tool should clearly output these details.
+
+## Acceptance Criteria (ACs)
+
+- AC1: Executing `create_bulk_transactions transactions='[{"accountId": "acc1", ...}, {"accountId": "acc2", ...}]'` (with `budget_id` context) successfully creates multiple transactions.
+- AC2: The tool correctly converts amounts to milliunits for all transactions in the input array.
+- AC3: The tool returns the bulk response from YNAB, including new transaction IDs and any duplicate import IDs.
+- AC4: Proper error handling for invalid input (e.g., malformed transaction array, missing required fields in individual transactions) or API errors.
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:**
+  - Files to Create: `src/tools/CreateBulkTransactionsTool.ts`
+  - _(Hint: See `docs/project-structure.md`)_
+
+- **Key Technologies:**
+  - TypeScript, Node.js, `mcp-framework`, `ynab` SDK (`ynab.SaveTransaction`, `ynab.BulkResponse`), `zod`.
+  - _(Hint: See `docs/tech-stack.md`)_
+
+- **API Interactions / SDK Usage:**
+  - Use `this.api.transactions.createBulkTransactions(budgetId, { transactions: processedTransactionsArray })`.
+  - `processedTransactionsArray` is an array of `ynab.SaveTransaction` objects.
+  - Iterate through the input `transactions` array, convert each `transaction.amount` from currency units to milliunits, and build the `processedTransactionsArray`.
+  - Ensure no subtransactions are passed in the payload for each item, as per YNAB API constraints for this bulk endpoint.
+  - Response data is in `response.data.bulk`.
+  - _(Hint: See `docs/api-reference.md` and YNAB SDK for `createBulkTransactions` and `BulkResponse`)_
+
+- **Data Structures:**
+  - Input Zod schema: `budgetId` (opt), `transactions` (req array of objects). Each object in the array should match the `SaveTransaction` structure from Story 2.3 (enhanced `create_transaction`), but explicitly *without* `subtransactions` field.
+  - Example for one item in `transactions` array: `{ accountId: z.string(), date: z.string(), amount: z.number(), payeeId: z.string().optional(), ... }`.
+  - Output: `ynab.BulkResponse` object (or a simplified version of it, like `response.data.bulk`).
+  - _(Hint: See `docs/data-models.md`)_
+
+- **Environment Variables:**
+  - `YNAB_API_TOKEN`, `YNAB_BUDGET_ID`.
+  - _(Hint: See `docs/environment-vars.md`)_
+
+- **Coding Standards Notes:**
+  - Tool name: `create_bulk_transactions`. Filename: `CreateBulkTransactionsTool.ts`.
+  - Milliunit conversion for amounts in each transaction of the array.
+  - Schema description for `transactions` should clarify that subtransactions are not supported per item in bulk creation.
+  - Error handling and logging.
+  - _(Hint: See `docs/coding-standards.md`)_
+
+## Tasks / Subtasks
+
+- [ ] Create `src/tools/CreateBulkTransactionsTool.ts`.
+- [ ] Define `name` ("create_bulk_transactions") and `description`.
+- [ ] Implement constructor.
+- [ ] Define Zod `schema` for `budgetId` (optional) and `transactions` (required array of objects, each object matching `SaveTransaction` fields *without* `subtransactions`; amounts in currency units).
+- [ ] Implement `execute` method:
+  - [ ] Determine `budgetId`. Handle missing `budgetId`.
+  - [ ] Validate input `transactions` array.
+  - [ ] Iterate through `input.transactions`:
+    - [ ] Convert `amount` to milliunits.
+    - [ ] Construct `ynab.SaveTransaction` object for each, ensuring no `subtransactions` field.
+  - [ ] Construct payload: `{ transactions: processedTransactionsArray }`.
+  - [ ] Call `this.api.transactions.createBulkTransactions(budgetId, payload)`.
+  - [ ] Handle API errors (AC4).
+  - [ ] Format and return `response.data.bulk` object.
+  - [ ] Add logging.
+
+## Testing Requirements
+
+- **Unit Tests:**
+  - Create `src/tools/CreateBulkTransactionsTool.test.ts`.
+  - Mock `ynab.API` and `transactions.createBulkTransactions`.
+  - Test creating a batch of transactions.
+  - Verify correct milliunit conversion for all transaction amounts.
+  - Verify payload structure.
+  - Test with empty `transactions` array and array with multiple items.
+  - Test error states.
+- **Manual/CLI Verification:**
+  - Test creating a few transactions in bulk against a live YNAB budget.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/3.2.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As a YNAB user, I want an MCP tool to update multiple existing transactions in a single API call (e.g., for bulk approval or categorization), so I can efficiently modify a batch of transactions.
+
+**Context:** This story in Epic 3 provides functionality for bulk updates of transactions, complementing the bulk creation tool (Story 3.1). It addresses the `README.md` item "be able to approve multiple transactions with 1 call".
+
+## Detailed Requirements
+
+Implement a new MCP tool named `update_bulk_transactions`.
+This tool will map to `PATCH /budgets/{budget_id}/transactions`.
+Optional parameter: `budget_id` (string) - defaults to `YNAB_BUDGET_ID` if set.
+Required parameter: `transactions` (array of `UpdateTransaction` objects for tool input). The `UpdateTransaction` object (defined by YNAB API for this endpoint) includes an `id` (string, required transaction ID) and all other mutable fields of a `SaveTransaction` (like `account_id`, `date`, `amount` in currency units, `payee_id`, `payee_name`, `category_id`, `memo`, `cleared`, `approved`, `flag_color`, `import_id`).
+Subtransactions are not supported for individual items in a bulk update via this YNAB API endpoint.
+The tool should accept an array of transaction objects, each requiring a `transaction_id` (as `id` in the object) and any fields to be updated.
+Amounts, if provided for update, should be input in currency units and converted to milliunits.
+Implement in `src/tools/UpdateBulkTransactionsTool.ts`.
+The API response (`response.data.bulk`) includes `bulk.transaction_ids`, `bulk.duplicate_import_ids`. The tool should output these details.
+
+## Acceptance Criteria (ACs)
+
+- AC1: Executing `update_bulk_transactions transactions='[{"id": "txn1", "approved": true}, {"id": "txn2", "categoryId": "catXYZ"}]'` (with `budget_id` context) successfully updates the specified fields for multiple transactions.
+- AC2: The tool correctly converts any provided amounts (if amount is an updatable field in bulk) to milliunits.
+- AC3: The tool returns the bulk response from YNAB, including updated transaction IDs.
+- AC4: Proper error handling for invalid input (e.g., missing `id` in transaction objects) or API errors.
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:**
+  - Files to Create: `src/tools/UpdateBulkTransactionsTool.ts`
+  - _(Hint: See `docs/project-structure.md`)_
+
+- **Key Technologies:**
+  - TypeScript, Node.js, `mcp-framework`, `ynab` SDK (`ynab.UpdateTransaction`, `ynab.BulkResponse`), `zod`.
+  - _(Hint: See `docs/tech-stack.md`)_
+
+- **API Interactions / SDK Usage:**
+  - Use `this.api.transactions.updateTransactions(budgetId, { transactions: processedTransactionsArray })`. (SDK method is `updateTransactions`).
+  - `processedTransactionsArray` is an array of `ynab.UpdateTransaction` objects. Each object *must* have an `id` and any other fields to update.
+  - Iterate through the input `transactions` array, convert each `transaction.amount` (if present and updatable) from currency units to milliunits, and build the `processedTransactionsArray`.
+  - Response data is in `response.data.bulk`.
+  - _(Hint: See `docs/api-reference.md` and YNAB SDK for `updateTransactions` and `UpdateTransaction` structure)_
+
+- **Data Structures:**
+  - Input Zod schema: `budgetId` (opt), `transactions` (req array of objects). Each object in the array needs `id: z.string()` and other optional fields from `SaveTransaction` (e.g., `amount: z.number().optional()` if updating amount, `approved: z.boolean().optional()`, etc.), *without* `subtransactions`.
+  - Output: `ynab.BulkResponse` object (or `response.data.bulk`).
+  - _(Hint: See `docs/data-models.md`)_
+
+- **Environment Variables:**
+  - `YNAB_API_TOKEN`, `YNAB_BUDGET_ID`.
+  - _(Hint: See `docs/environment-vars.md`)_
+
+- **Coding Standards Notes:**
+  - Tool name: `update_bulk_transactions`. Filename: `UpdateBulkTransactionsTool.ts`.
+  - Milliunit conversion for amounts if amounts are part of the update payload.
+  - Schema for each transaction object in the array must mandate `id`.
+  - Error handling and logging.
+  - _(Hint: See `docs/coding-standards.md`)_
+
+## Tasks / Subtasks
+
+- [ ] Create `src/tools/UpdateBulkTransactionsTool.ts`.
+- [ ] Define `name` ("update_bulk_transactions") and `description`.
+- [ ] Implement constructor.
+- [ ] Define Zod `schema` for `budgetId` (optional) and `transactions` (required array of objects, each object having a required `id` and other optional updatable fields from `SaveTransaction` *without* `subtransactions`; amounts in currency units).
+- [ ] Implement `execute` method:
+  - [ ] Determine `budgetId`. Handle missing `budgetId`.
+  - [ ] Validate input `transactions` array (e.g., each item has an `id`).
+  - [ ] Iterate through `input.transactions`:
+    - [ ] If `amount` is present, convert to milliunits.
+    - [ ] Construct `ynab.UpdateTransaction` object for each.
+  - [ ] Construct payload: `{ transactions: processedTransactionsArray }`.
+  - [ ] Call `this.api.transactions.updateTransactions(budgetId, payload)`.
+  - [ ] Handle API errors (AC4).
+  - [ ] Format and return `response.data.bulk` object.
+  - [ ] Add logging.
+
+## Testing Requirements
+
+- **Unit Tests:**
+  - Create `src/tools/UpdateBulkTransactionsTool.test.ts`.
+  - Mock `ynab.API` and `transactions.updateTransactions`.
+  - Test updating a batch of transactions (e.g., bulk approval, bulk categorization).
+  - Verify correct milliunit conversion for amounts if applicable.
+  - Verify payload structure (each item has `id`).
+  - Test with empty `transactions` array and array with multiple items.
+  - Test error states.
+- **Manual/CLI Verification:**
+  - Test updating a few transactions in bulk (e.g., approve them) against a live YNAB budget.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/4.1.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As the primary user and developer, I want the new category read operation tools (`list_categories`, `get_category`, `get_category_by_month`) to be clearly documented in the `README.md`, so I can quickly reference their usage, parameters, and expected output.
+
+**Context:** This is the first documentation story in Epic 4, ensuring that the category read tools implemented in Epic 1 are user-discoverable and understandable via the project's main `README.md`.
+
+## Detailed Requirements
+
+For each tool implemented in Epic 1 (`list_categories`, `get_category`, `get_category_by_month`):
+- Add a section to `README.md` under "Available tools" (or a new sub-section like "Category Tools").
+- Include the tool's name (e.g., `list_categories`).
+- Provide a brief description of its purpose.
+- List all available parameters (e.g., `budget_id`, `category_id`, `month`), clearly indicating which are required or optional, and their expected formats (e.g., date format for `month`). Mention reliance on `YNAB_BUDGET_ID` environment variable for optional `budget_id`.
+- Provide a concise example of an MCP command for the tool.
+- Briefly describe the expected output structure or key information returned (e.g., "array of Category objects with amounts converted to currency strings").
+Ensure the documentation style is consistent with existing tool documentation in the `README.md`.
+
+## Acceptance Criteria (ACs)
+
+- AC1: `README.md` contains a dedicated documentation section for `list_categories` with its name, description, parameters (including `budget_id`), example usage, and output description.
+- AC2: `README.md` contains a dedicated documentation section for `get_category` with its name, description, parameters (`budget_id`, `category_id`), example usage, and output description.
+- AC3: `README.md` contains a dedicated documentation section for `get_category_by_month` with its name, description, parameters (`budget_id`, `month`, `category_id`), example usage, and output description.
+- AC4: All documented parameters accurately reflect the implemented tool schemas, including optionality and env var fallbacks.
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:**
+  - Files to Modify: `README.md`
+  - _(Hint: See `docs/project-structure.md`)_
+
+- **Key Technologies:**
+  - Markdown
+  - _(Hint: See `docs/tech-stack.md`)_
+
+- **API Interactions / SDK Usage:**
+  - N/A for documentation story. Reference the actual tool implementations (Stories 1.1, 1.2, 1.3) for accuracy.
+  - _(Hint: See `docs/api-reference.md` for details on tool parameters and behavior)_
+
+- **Data Structures:**
+  - N/A for documentation story. Focus on accurately describing tool inputs/outputs.
+  - _(Hint: See `docs/data-models.md`)_
+
+- **Environment Variables:**
+  - Mention `YNAB_BUDGET_ID` as a fallback for `budgetId` where applicable.
+  - _(Hint: See `docs/environment-vars.md`)_
+
+- **Coding Standards Notes:**
+  - Maintain consistent Markdown formatting with existing `README.md` sections.
+  - Use backticks for tool names, parameters, and code examples.
+  - _(Hint: See `docs/coding-standards.md` if it contains notes on documentation style, otherwise use existing `README.md` style)_
+
+## Tasks / Subtasks
+
+- [ ] Update `README.md`:
+  - [ ] Add a section for `list_categories`:
+    - [ ] Name: `list_categories`
+    - [ ] Description (from Story 1.1)
+    - [ ] Parameters: `budgetId` (optional, uses `YNAB_BUDGET_ID` if not set).
+    - [ ] Example: `list_categories budget_id=your_budget_id` or `list_categories` (if env var set).
+    - [ ] Output: "Returns an array of all category objects for the budget, with amounts converted to currency strings."
+  - [ ] Add a section for `get_category`:
+    - [ ] Name: `get_category`
+    - [ ] Description (from Story 1.2)
+    - [ ] Parameters: `category_id` (required), `budgetId` (optional).
+    - [ ] Example: `get_category category_id=some_cat_id budget_id=your_budget_id`.
+    - [ ] Output: "Returns the full details of the specified category, with amounts converted to currency strings."
+  - [ ] Add a section for `get_category_by_month`:
+    - [ ] Name: `get_category_by_month`
+    - [ ] Description (from Story 1.3)
+    - [ ] Parameters: `month` (required, format `YYYY-MM-DD`), `category_id` (required), `budgetId` (optional).
+    - [ ] Example: `get_category_by_month month=2025-07-01 category_id=some_cat_id`.
+    - [ ] Output: "Returns the category details for the specified month, with amounts converted."
+- [ ] Verify consistency with existing `README.md` tool documentation style.
+- [ ] Ensure all documented parameters, optionality, and formats match the actual tool implementations from Epic 1.
+
+## Testing Requirements
+
+- **Manual/CLI Verification:**
+  - Review the updated `README.md` for clarity, accuracy, and completeness regarding the documented tools.
+  - Check for formatting consistency.
+  - Cross-reference with the tool implementation details from Epic 1 and `docs/api-reference.md`.
+- _(Hint: See `docs/testing-strategy.md` for the overall approach)_
+
+---
+File: ai/stories/4.2.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As the primary user and developer, I want the new category write operation tools (`update_category`, `update_month_category`) to be clearly documented in the `README.md`, so I know how to programmatically modify categories and their monthly budget allocations.
+
+**Context:** This story continues Epic 4 by documenting the category write tools from Epic 1 in the `README.md`.
+
+## Detailed Requirements
+
+For each tool implemented in Epic 1 (`update_category`, `update_month_category`):
+- Add a section to `README.md` under "Available tools" (likely within a "Category Tools" subsection).
+- Include the tool's name.
+- Provide a brief description.
+- List all parameters (required/optional, formats). For `update_month_category`, clearly state that the `budgeted` parameter expects an amount in milliunits.
+- Provide an example MCP command.
+- Describe the expected output (e.g., "the updated category object, with amounts converted to currency strings").
+Ensure consistency with existing documentation.
+
+## Acceptance Criteria (ACs)
+
+- AC1: `README.md` contains documentation for `update_category` including its purpose, parameters (`budgetId`, `category_id`, `name`, `note`), example usage, and output.
+- AC2: `README.md` contains documentation for `update_month_category` including its purpose, parameters (`budgetId`, `month`, `category_id`, `budgeted`), with clear indication that `budgeted` is in milliunits for input, example usage, and output (amounts converted).
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:** `README.md`
+- **Key Technologies:** Markdown
+- **API Interactions / SDK Usage:** N/A. Refer to Story 1.4 and 1.5 implementations.
+- **Data Structures:** N/A. Describe tool inputs/outputs accurately.
+- **Environment Variables:** Mention `YNAB_BUDGET_ID` fallback.
+- **Coding Standards Notes:** Consistent Markdown.
+
+## Tasks / Subtasks
+
+- [ ] Update `README.md`:
+  - [ ] Add section for `update_category`:
+    - [ ] Name, Description.
+    - [ ] Parameters: `category_id` (req), `budgetId` (opt), `name` (opt), `note` (opt).
+    - [ ] Example: `update_category category_id=cat_id_1 name="New Name"`.
+    - [ ] Output description.
+  - [ ] Add section for `update_month_category`:
+    - [ ] Name, Description.
+    - [ ] Parameters: `month` (req, `YYYY-MM-DD`), `category_id` (req), `budgeted` (req, number - **in milliunits**), `budgetId` (opt).
+    - [ ] Example: `update_month_category month=2025-07-01 category_id=cat_id_1 budgeted=150000`.
+    - [ ] Output description.
+- [ ] Verify accuracy with Epic 1 implementations.
+
+## Testing Requirements
+
+- **Manual/CLI Verification:** Review `README.md` for clarity, accuracy, especially the milliunits note for `update_month_category`.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/4.3.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As the primary user and developer, I want all enhanced and new transaction read tools (`list_transactions`, `get_transaction_by_id`, `list_account_transactions`, `list_category_transactions`, `list_payee_transactions`) documented in `README.md` for easy reference.
+
+**Context:** This story in Epic 4 focuses on documenting all the transaction read tools from Epic 2.
+
+## Detailed Requirements
+
+For each tool from Epic 2 (`list_transactions`, `get_transaction_by_id`, `list_account_transactions`, `list_category_transactions`, `list_payee_transactions`):
+- Update or add a section to `README.md` (likely under a "Transaction Tools" subsection).
+- Include name, description.
+- List parameters (required/optional, formats, filter options like `since_date`, `type`).
+- Provide example MCP command.
+- Describe expected output (e.g., array of transactions, specific transaction detail). Clarify if it's `TransactionDetail` or `HybridTransaction` and that amounts are converted.
+- For `list_transactions`, clarify its generic nature compared to the existing `get_unapproved_transactions`.
+
+## Acceptance Criteria (ACs)
+
+- AC1: `README.md` documents `list_transactions` (with all its filters: `since_date`, `type`).
+- AC2: `README.md` documents `get_transaction_by_id`.
+- AC3: `README.md` documents `list_account_transactions`.
+- AC4: `README.md` documents `list_category_transactions` (noting `HybridTransaction` output).
+- AC5: `README.md` documents `list_payee_transactions` (noting `HybridTransaction` output).
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:** `README.md`
+- **Key Technologies:** Markdown
+- **API Interactions / SDK Usage:** N/A. Refer to Epic 2 implementations (Stories 2.1, 2.2, 2.6, 2.7, 2.8).
+- **Data Structures:** N/A. Describe tool inputs/outputs accurately.
+- **Coding Standards Notes:** Consistent Markdown.
+
+## Tasks / Subtasks
+
+- [ ] Update `README.md`:
+  - [ ] Add/Update section for `list_transactions`: Name, Desc, Params (`budgetId`, `since_date`, `type`), Example, Output (array of `TransactionDetail`, mention it's more generic than `get_unapproved_transactions`).
+  - [ ] Add section for `get_transaction_by_id`: Name, Desc, Params (`transaction_id`, `budgetId`), Example, Output (`TransactionDetail`).
+  - [ ] Add section for `list_account_transactions`: Name, Desc, Params (`account_id`, `budgetId`, `since_date`, `type`), Example, Output (array of `TransactionDetail`).
+  - [ ] Add section for `list_category_transactions`: Name, Desc, Params (`category_id`, `budgetId`, `since_date`, `type`), Example, Output (array of `HybridTransaction`).
+  - [ ] Add section for `list_payee_transactions`: Name, Desc, Params (`payee_id`, `budgetId`, `since_date`, `type`), Example, Output (array of `HybridTransaction`).
+- [ ] Verify accuracy with Epic 2 implementations.
+
+## Testing Requirements
+
+- **Manual/CLI Verification:** Review `README.md` for clarity, accuracy, and completeness for all five tools.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/4.4.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As the primary user and developer, I want the significantly enhanced `create_transaction` tool and the new `update_transaction` and `delete_transaction` tools to be thoroughly documented in `README.md`.
+
+**Context:** This Epic 4 story ensures documentation for the critical transaction write operations from Epic 2.
+
+## Detailed Requirements
+
+- For the enhanced `create_transaction` tool (from Story 2.3):
+  - Update its existing documentation in `README.md` to reflect full parameter support, especially the addition of `import_id` and `subtransactions` (with structure of subtransaction objects and note that amounts are in currency units).
+  - Provide clear examples for creating simple and split/sub-transactions.
+- For the new `update_transaction` tool (from Story 2.4):
+  - Add a section to `README.md` including its name, description, all parameters (`transaction_id` and all updatable fields from `SaveTransaction`, noting amounts are in currency units), and example usage.
+- For the new `delete_transaction` tool (from Story 2.5):
+  - Add a section to `README.md` including its name, description, parameters, and example.
+
+## Acceptance Criteria (ACs)
+
+- AC1: `README.md` documentation for `create_transaction` is updated to include all new parameters (especially `import_id`, `subtransactions` with their structure and currency unit amounts) with examples for simple and split transactions.
+- AC2: `README.md` contains comprehensive documentation for the new `update_transaction` tool, including all its optional parameters for updating.
+- AC3: `README.md` contains documentation for the new `delete_transaction` tool.
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:** `README.md`
+- **Key Technologies:** Markdown
+- **API Interactions / SDK Usage:** N/A. Refer to Epic 2 implementations (Stories 2.3, 2.4, 2.5).
+- **Coding Standards Notes:** Consistent Markdown. Pay attention to example clarity for `subtransactions`.
+
+## Tasks / Subtasks
+
+- [ ] Update `README.md` documentation for `create_transaction`:
+  - [ ] Detail new optional parameters: `import_id`, `subtransactions` (array of objects: `amount` in currency, `payeeId`, `payeeName`, `categoryId`, `memo`).
+  - [ ] Add example for simple transaction with `import_id`.
+  - [ ] Add example for split transaction using `subtransactions`.
+- [ ] Add `README.md` section for `update_transaction`:
+  - [ ] Name, Description.
+  - [ ] Parameters: `transaction_id` (req), `budgetId` (opt), and all other optional fields from `SaveTransaction` for update (including `subtransactions`, noting amounts in currency units).
+  - [ ] Example.
+- [ ] Add `README.md` section for `delete_transaction`:
+  - [ ] Name, Description.
+  - [ ] Parameters: `transaction_id` (req), `budgetId` (opt).
+  - [ ] Example.
+- [ ] Verify accuracy with Epic 2 implementations.
+
+## Testing Requirements
+
+- **Manual/CLI Verification:** Review `README.md` for clarity, accuracy, especially the `subtransaction` examples and parameter lists.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/4.5.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As the primary user and developer, I want the new bulk transaction tools (`create_bulk_transactions`, `update_bulk_transactions`) to be clearly documented in `README.md` so I can efficiently manage multiple transactions.
+
+**Context:** This Epic 4 story documents the bulk transaction tools from Epic 3.
+
+## Detailed Requirements
+
+For each tool from Epic 3 (`create_bulk_transactions`, `update_bulk_transactions`):
+- Add a section to `README.md` (likely under "Transaction Tools" or a new "Bulk Transaction Tools" subsection).
+- Include name, description.
+- Detail the structure of the required `transactions` array parameter, showing the expected object structure for each item in the array (noting amounts in currency units, and no subtransactions per item for bulk).
+- For `update_bulk_transactions`, specify that each object in the array needs an `id`.
+- Provide example MCP command demonstrating the array input.
+- Describe the expected bulk API response output (e.g., `bulk` object with `transaction_ids`).
+
+## Acceptance Criteria (ACs)
+
+- AC1: `README.md` documents `create_bulk_transactions` with details on the `transactions` array structure (each item like `SaveTransaction` but no subtransactions, amounts in currency) and example.
+- AC2: `README.md` documents `update_bulk_transactions` with details on the `transactions` array structure (each item needing `id` and other updatable fields, no subtransactions, amounts in currency) and example.
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:** `README.md`
+- **Key Technologies:** Markdown
+- **API Interactions / SDK Usage:** N/A. Refer to Epic 3 implementations (Stories 3.1, 3.2).
+- **Coding Standards Notes:** Consistent Markdown. Clearly show array structure in examples.
+
+## Tasks / Subtasks
+
+- [ ] Update `README.md`:
+  - [ ] Add section for `create_bulk_transactions`:
+    - [ ] Name, Description.
+    - [ ] Parameter: `transactions` (required array of transaction objects; detail structure - `accountId`, `date`, `amount` in currency, etc., no subtransactions per item).
+    - [ ] Example showing array input.
+    - [ ] Output: (e.g. `response.data.bulk` object).
+  - [ ] Add section for `update_bulk_transactions`:
+    - [ ] Name, Description.
+    - [ ] Parameter: `transactions` (required array of transaction objects; detail structure - required `id`, other updatable fields, no subtransactions per item, amounts in currency).
+    - [ ] Example showing array input.
+    - [ ] Output: (e.g. `response.data.bulk` object).
+- [ ] Verify accuracy with Epic 3 implementations.
+
+## Testing Requirements
+
+- **Manual/CLI Verification:** Review `README.md` for clarity and accuracy of the bulk operations, especially the `transactions` array structure and constraints.
+- _(Hint: See `docs/testing-strategy.md`)_
+
+---
+File: ai/stories/4.6.story.md
+---
+**Status:** Draft
+
+## Goal & Context
+
+**User Story:** As the primary user and developer, I want the "Available tools" section of the `README.md` to be well-organized and easy to navigate after adding documentation for all the new and enhanced tools.
+
+**Context:** This final story in Epic 4 is about ensuring the overall `README.md` remains coherent and user-friendly after all new tool documentation has been added.
+
+## Detailed Requirements
+
+- Review the entire "Available tools" section in `README.md`.
+- Ensure a consistent formatting style is applied to all tool descriptions (new and old).
+- Consider grouping tools logically (e.g., Category Tools, Transaction Tools (Single), Transaction Tools (Bulk)) if the list becomes long, to improve readability. This might involve creating subheadings.
+- Update any general introductory text in the `README.md` (e.g., in "Goal" or "Workflows" or "Current state") if necessary to reflect the expanded capabilities of the server.
+- Ensure all example prompts or use cases mentioned in the "Workflows" or "Current state" sections are updated if new tools supersede or enhance those examples (e.g., `update_transaction` might affect "updateCategory tool" or "updateTransaction more general tool" in "Next" items).
+
+## Acceptance Criteria (ACs)
+
+- AC1: The "Available tools" section in `README.md` is consistently formatted.
+- AC2: Tools are logically grouped with clear subheadings if beneficial for readability.
+- AC3: Any introductory text or general examples in the `README.md` reflect the server's new capabilities and correctly reference the new/updated tools.
+- AC4: "Next" items in `README.md` are updated if addressed by these epics (e.g., "approve multiple transactions", "updateCategory", "updateTransaction").
+
+## Technical Implementation Context
+
+**Guidance:** Use the following details for implementation.
+- **Relevant Files:** `README.md`
+- **Key Technologies:** Markdown
+- **API Interactions / SDK Usage:** N/A.
+- **Coding Standards Notes:** Focus on clarity, consistency, and navigability of the documentation.
+
+## Tasks / Subtasks
+
+- [ ] Review and refactor the "Available tools" section in `README.md`:
+  - [ ] Create logical groupings/subheadings (e.g., "Category Tools", "Single Transaction Tools", "Bulk Transaction Tools").
+  - [ ] Ensure consistent formatting (name, description, params, example, output) for all tool entries (new and existing like `ListBudgets`, `BudgetSummary`, `GetUnapprovedTransactions`, `CreateTransaction`, `ApproveTransaction`).
+- [ ] Update general `README.md` sections:
+  - [ ] Review and update the "Goal" section if needed.
+  - [ ] Review and update the "Workflows" section to incorporate new tool capabilities or provide better examples.
+  - [ ] Review and update the "Current state" section (description of available tools) to be a brief overview, pointing to the detailed "Available tools" list.
+  - [ ] Review and update the "Next" items list:
+    - [ ] Mark "be able to approve multiple transactions with 1 call" as addressed (by `update_bulk_transactions`).
+    - [ ] Mark "updateCategory tool" as addressed (by `update_category`).
+    - [ ] Mark "updateTransaction more general tool" as addressed (by `update_transaction`).
+- [ ] Perform a final read-through of the entire `README.md` for coherence and accuracy.
+
+## Testing Requirements
+
+- **Manual/CLI Verification:**
+  - Thoroughly review the entire `README.md` file.
+  - Check for broken links or formatting issues.
+  - Ensure the structure is logical and easy to follow.
+  - Confirm that all new tools are documented and existing tool documentation is consistent.
+  - Verify that introductory sections and "Next" items accurately reflect the project's new state.
+- _(Hint: See `docs/testing-strategy.md`)_

@@ -1,6 +1,6 @@
 ---
 description: "Formatting guidelines for writing a proper .mdc rule in Cursor"
-globs: **.mdc
+globs: CopilotKit/**
 alwaysApply: false
 ---
 # .mdc Rule Formatting Guidelines
