@@ -1,9 +1,8 @@
-
 # ynab-mcp-server API Enhancement Product Requirements Document (PRD)
 
 ## Intro
 
-This document outlines the requirements for enhancing the `ynab-mcp-server`, an existing Go-based application that provides a Model Context Protocol (MCP) interface to the You Need A Budget (YNAB) API. The primary goal of this project is to extend the server's capabilities to support all available YNAB API v1 endpoints related to categories and transactions. This will allow the primary user to achieve more comprehensive programmatic interaction with their YNAB data for personalized automation, data manipulation, and customized financial insights, which are not easily achievable through standard YNAB applications.
+This document outlines the requirements for enhancing the `ynab-mcp-server`, an existing conceptual predecessor to this TypeScript-based application that provides a Model Context Protocol (MCP) interface to the You Need A Budget (YNAB) API. The primary goal of this project is to extend the server's capabilities to support all available YNAB API v1 endpoints related to categories and transactions. This will allow the primary user to achieve more comprehensive programmatic interaction with their YNAB data for personalized automation, data manipulation, and customized financial insights, which are not easily achievable through standard YNAB applications.
 
 ## Goals and Context
 
@@ -61,17 +60,17 @@ This document outlines the requirements for enhancing the `ynab-mcp-server`, an 
   - **Scalability:** Not a primary concern for personal use, but the implementation should not be inherently inefficient.
   - **Reliability/Availability:** The server should reliably translate MCP commands to YNAB API calls and accurately reflect API responses or errors.
   - **Security:** Authentication with the YNAB API will continue to use Personal Access Tokens. No new authentication schemes will be introduced in the server. The application is for personal, local use.
-  - **Maintainability:** Code should be reasonably clean, maintainable, and follow Go best practices to facilitate future personal use and updates. It should align with the existing `ynab-mcp-server` codebase structure.
+  - **Maintainability:** Code should be reasonably clean, maintainable, and follow TypeScript/Node.js best practices to facilitate future personal use and updates. It should align with the existing `ynab-mcp-server` codebase structure.
   - **Usability/Accessibility:** The MCP tools should have clear and intuitive command-line signatures and argument names. Error messages from the YNAB API should be clearly relayed to the user.
   - **Other Constraints:**
-      * Must be an extension of the existing `ynab-mcp-server` project.
-      * Primary language must be Go, leveraging the existing MCP framework.
+      * Must be an extension of the existing `ynab-mcp-server` project structure and concepts.
+      * Primary language is TypeScript, running on Node.js, leveraging the mcp-framework.
       * Strictly for personal use and local execution.
 
 ### User Experience (UX) Requirements (High-Level)
 
   - UX is primarily command-line (MCP) based.
-  - MCP tool names should be consistent and predictable, ideally mapping closely to YNAB API endpoint purposes (e.g., `listCategories`, `createTransaction`).
+  - MCP tool names should be consistent and predictable, ideally mapping closely to YNAB API endpoint purposes (e.g., `list_categories`, `create_transaction`).
   - Tool arguments should be clearly named, reflecting YNAB API parameters.
   - Output should be structured and informative, suitable for scripting or human reading.
   - Error messages should be clear and provide context from the API.
@@ -127,10 +126,10 @@ This project extends an existing Go application (`ynab-mcp-server`). The archite
 
 ### Technical Infrastructure
 
-  - **Starter Project/Template:** Existing `ynab-mcp-server` project ([https://github.com/calebl/ynab-mcp-server](https://github.com/calebl/ynab-mcp-server)).
+  - **Starter Project/Template:** Conceptual predecessor: `ynab-mcp-server` Go project ([https://github.com/calebl/ynab-mcp-server](https://github.com/calebl/ynab-mcp-server)). This project is a TypeScript-based implementation.
   - **Hosting/Cloud Provider:** Not applicable (local execution for personal use).
   - **Frontend Platform:** Not applicable (CLI-based MCP interface).
-  - **Backend Platform:** Go (must align with the existing `ynab-mcp-server` codebase and its MCP framework).
+  - **Backend Platform:** TypeScript/Node.js (must align with the existing `ynab-mcp-server` codebase and its MCP framework).
   - **Database Requirements:** Not applicable (data resides in YNAB, accessed via API).
 
 ### Technical Constraints
